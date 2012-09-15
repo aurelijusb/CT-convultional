@@ -1,10 +1,7 @@
 package lt.banelis.aurelijus.data;
 
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
 import java.awt.Graphics;
-import java.awt.event.KeyListener;
 import javax.swing.JPanel;
 
 /**
@@ -115,7 +112,7 @@ public abstract class AbstractDataStructure extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        paintEquals(g);
+//        paintEquals(g);
     }
 
     private void paintEquals(Graphics g) {

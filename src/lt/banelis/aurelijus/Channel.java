@@ -18,6 +18,10 @@ public class Channel {
         return queue.poll();
     }
 
+    /**
+     * @deprecated use GUI converter
+     * @param binary 
+     */
     public void replace(String binary) {
         queue.clear();
         for (byte b : binary.getBytes()) {
@@ -30,7 +34,10 @@ public class Channel {
             }
         }
     }
-    
+
+    /**
+     * @deprecated use GUI converter
+     */
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();
@@ -42,5 +49,9 @@ public class Channel {
             }
         }
         return result.toString();
+    }
+    
+    public Iterable<Boolean> getBuffer() {
+        return queue;
     }
 }

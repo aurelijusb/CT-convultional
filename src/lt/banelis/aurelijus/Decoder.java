@@ -10,7 +10,12 @@ public class Decoder {
     private Channel channel;
     private Boolean[] registers = new Boolean[6];
     private Boolean[] sumRegisters = new Boolean[6];
-    private boolean inSynchronization = false;
+    public static final int synchronisationLenth = 6;
+    private int received = 0;
+    
+    //FIXME: no debugh info
+    private Boolean sum1 = Boolean.FALSE;
+    private Boolean mde = Boolean.FALSE;
     
     public Decoder(Channel channel) {
         this.channel = channel;
@@ -19,23 +24,29 @@ public class Decoder {
            sumRegisters[i] = Boolean.FALSE;
         }
     }
-    
+
     public Boolean read() {
-        if (!inSynchronization) {
-            synchroniseRegisters();
-            inSynchronization = true;
-        }
-        return readBit();
+        Boolean data = channel.retrieve();
+        Boolean syndrome = channel.retrieve();        
+        return read(data, syndrome);
     }
     
-    private Boolean readBit() {
-        Boolean data = channel.retrieve();
-        Boolean syndrome = channel.retrieve();
+    private Boolean read(Boolean data, Boolean syndrome) {
+        /* Variable and state diagram relation:
+         *
+         * data->------+-- registers ------- sumOut --> 
+         *             |  ///                 / 
+         * syndrome->-sum1          _________/
+         *             |         ///        / 
+         *              \--- sumRegisters  /
+         *               \     ///        /
+         *                \__ mde _______/
+         */
         if (data != null && syndrome != null) {
             /* Calculating output */
-            Boolean sum1 = data ^ syndrome ^ registers[1] ^ registers[4] ^
+            sum1 = data ^ syndrome ^ registers[1] ^ registers[4] ^
                            registers[5];
-            Boolean mde = mde(new Boolean[] {sum1, sumRegisters[0],
+            mde = mde(new Boolean[] {sum1, sumRegisters[0],
                               sumRegisters[3], sumRegisters[5]});
             Boolean sumOut = registers[5] ^ mde;
 
@@ -43,26 +54,19 @@ public class Decoder {
             for (int i = registers.length - 1; i > 0; i--) {
                 registers[i] = registers[i - 1];
             }
-            registers[0] = syndrome;
-            for (int i = sumRegisters.length - 1; i > 0; i--) {
-                sumRegisters[i] = sumRegisters[i - 1];
-            }
-            sumRegisters[0] = sum1;
-            
-            //FIXME: error corecting
-//            return sumOut;
-            return data;
+            registers[0] = data;
+            sumRegisters[5] = sumRegisters[4];
+            sumRegisters[4] = sumRegisters[3] ^ mde;
+            sumRegisters[3] = sumRegisters[2];
+            sumRegisters[2] = sumRegisters[1];
+            sumRegisters[1] = sumRegisters[0] ^ mde;
+            sumRegisters[0] = sum1 ^ mde;
+            return sumOut;
         } else {
             return null;
         }
     }
 
-    private void synchroniseRegisters() {
-        for (int i = 0; i < registers.length; i++) {
-            readBit();
-        }
-    }
-    
     private Boolean mde(Boolean[] bits) {
         int ones = 0;
         int zeros = 0;
@@ -84,13 +88,27 @@ public class Decoder {
         LinkedList<Boolean> all = new LinkedList<Boolean>();
         Boolean bit;
         while ((bit = read()) != null) {
-            all.add(bit);
+            if (received > synchronisationLenth) {
+                all.add(bit);
+            } else {
+                all.add(null);
+            }
+            received++;
         }
         return all;
     }
     
+    public Iterable<Boolean> resetSynchronisationCounter() {
+        LinkedList<Boolean> all = new LinkedList<Boolean>();
+        for (int i = 0; i < synchronisationLenth; i++) {
+            all.add(read(Boolean.FALSE, Boolean.FALSE));
+        }
+        received = 0;
+        return all;
+    }
+    
     /**
-     * @depracated use GUI
+     * @deprecated use GUI
      */
     public String readToString() {
         StringBuilder result = new StringBuilder();
@@ -113,9 +131,10 @@ public class Decoder {
         return sumRegisters;
     }
 
-    public boolean isSynchronized() {
-        return inSynchronization;
+    /**
+     * @deprecated debug functions
+     */
+    public Boolean[] getSums() {
+        return new Boolean[] {sum1, mde};
     }
-    
-    
 }

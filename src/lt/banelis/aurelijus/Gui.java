@@ -1,17 +1,11 @@
 package lt.banelis.aurelijus;
 
-import java.awt.AWTKeyStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.KeyboardFocusManager;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.HashSet;
-import java.util.Set;
 import javax.swing.JComponent;
-import javax.swing.KeyStroke;
 import javax.swing.text.JTextComponent;
 import lt.banelis.aurelijus.data.AbstractDataStructure;
 import lt.banelis.aurelijus.data.Bit;
@@ -102,22 +96,17 @@ public class Gui extends javax.swing.JFrame {
      */
     
     private void showEncoderRegisters() {
-        String synchronised = markSynchronized(encoder.isSynchronized(),
-                              encoderRegistersLabel);
         encoderRegistersLabel.setText("Registrai: " +
-                                      toDecimals(encoder.getRegisters()) + " " +
-                                      synchronised);
+                                      toDecimals(encoder.getRegisters()));
     }
 
     private void showDecoderRegisters() {
-        String synchronised = markSynchronized(decoder.isSynchronized(),
-                              decoderRegistersLabel);
         decoderRegistersLabel.setText("Registrai: " +
                                       toDecimals(decoder.getRegisters()) +
                                       " | " +
                                       toDecimals(decoder.getSumRegisters()) +
-                                      " " +
-                                      synchronised);
+                                      " | " +
+                                      toDecimals(decoder.getSums()));
     }
     
     private String toDecimals(Boolean[] bits) {
