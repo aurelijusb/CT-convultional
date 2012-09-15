@@ -16,6 +16,9 @@ public class Encoder {
         }
     }
     
+    /**
+     * @deprecated Use GUi
+     */
     public void encode(String binary) {
         for (byte b : binary.getBytes()) {
             if (b == '1') {

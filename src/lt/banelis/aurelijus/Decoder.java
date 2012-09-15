@@ -1,5 +1,7 @@
 package lt.banelis.aurelijus;
 
+import java.util.LinkedList;
+
 /**
  *
  * @author Aurelijus Banelis
@@ -28,9 +30,8 @@ public class Decoder {
     
     private Boolean readBit() {
         Boolean data = channel.retrieve();
-        if (data != null) {
-            Boolean syndrome = channel.retrieve();
-
+        Boolean syndrome = channel.retrieve();
+        if (data != null && syndrome != null) {
             /* Calculating output */
             Boolean sum1 = data ^ syndrome ^ registers[1] ^ registers[4] ^
                            registers[5];
@@ -79,7 +80,19 @@ public class Decoder {
         }
     }
     
-    public String readAll() {
+    public Iterable<Boolean> readAll() {
+        LinkedList<Boolean> all = new LinkedList<Boolean>();
+        Boolean bit;
+        while ((bit = read()) != null) {
+            all.add(bit);
+        }
+        return all;
+    }
+    
+    /**
+     * @depracated use GUI
+     */
+    public String readToString() {
         StringBuilder result = new StringBuilder();
         Boolean bit;
         while ((bit = read()) != null) {
