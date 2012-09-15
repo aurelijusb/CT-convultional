@@ -1,6 +1,7 @@
 package lt.banelis.aurelijus;
 
 import java.awt.Color;
+import javax.swing.JComponent;
 
 /**
  * convolutional coding.
@@ -13,39 +14,70 @@ import java.awt.Color;
  */
 public class Gui extends javax.swing.JFrame {
     private Channel channel = new Channel();
-    private Coding coding = new Coding(channel);
-    private Decoding decoding = new Decoding(channel);
+    private Encoder encoder = new Encoder(channel);
+    private Decoder decoder = new Decoder(channel);
     private final static Color equal = new Color(128, 255, 128);
     private final static Color different = new Color(255, 128, 128);
     
     public Gui() {
         initComponents();
-        updateSender();
+        showEncoderRegisters();
+        showDecoderRegisters();
     }
     
     public final void updateSender() {
-        coding.encode(senderTextField.getText());
+        encoder.encode(senderTextField.getText());
         channelTextField.setText(channel.toString());
         updateReceiver();
-        showRegisters();
+        showEncoderRegisters();
     }
     
-    private void showRegisters() {
-        StringBuilder registersText = new StringBuilder();
+    private void showEncoderRegisters() {
+        String synchronised = markSynchronized(encoder.isSynchronized(),
+                              encoderRegistersLabel);
+        encoderRegistersLabel.setText("Registrai: " +
+                                      toDecimals(encoder.getRegisters()) + " " +
+                                      synchronised);
+    }
+
+    private void showDecoderRegisters() {
+        String synchronised = markSynchronized(decoder.isSynchronized(),
+                              decoderRegistersLabel);
+        decoderRegistersLabel.setText("Registrai: " +
+                                      toDecimals(decoder.getRegisters()) +
+                                      " | " +
+                                      toDecimals(decoder.getSumRegisters()) +
+                                      " " +
+                                      synchronised);
+    }
+    
+    private String toDecimals(Boolean[] bits) {
+        StringBuilder stringBuilder = new StringBuilder();
         boolean first = true;
-        for (Boolean register : coding.getRegisters()) {
+        for (Boolean register : bits) {
             if (first) {
                 first = false;
             } else {
-                registersText.append(" ");
+                stringBuilder.append(" ");
             }
             if (register) {
-                registersText.append("1");
+                stringBuilder.append("1");
             } else {
-                registersText.append("0");
+                stringBuilder.append("0");
             }
         }
-        registersLabel.setText("Reg: " + registersText.toString());
+        return stringBuilder.toString();
+    }
+    
+    private String markSynchronized(boolean inSynchorinzation,
+                                    JComponent component) {
+        if (inSynchorinzation) {
+            component.setForeground(Color.BLACK);
+            return "Sinchronizuoti";
+        } else {
+            component.setForeground(Color.RED);
+            return "Be pradinių reikšmių";
+        }        
     }
 
     public final void updateChannel() {
@@ -54,12 +86,13 @@ public class Gui extends javax.swing.JFrame {
     }
     
     public final void updateReceiver() {
-        receiverTextField.setText(decoding.readAll());
+        receiverTextField.setText(decoder.readAll());
         if (receiverTextField.getText().equals(senderTextField.getText())) {
             receiverTextField.setBackground(equal);
         } else {
             receiverTextField.setBackground(different);
         }
+        showDecoderRegisters();
     }
     
     @SuppressWarnings("unchecked")
@@ -68,13 +101,15 @@ public class Gui extends javax.swing.JFrame {
 
         jPanel1 = new javax.swing.JPanel();
         senderTextField = new javax.swing.JTextField();
-        registersLabel = new javax.swing.JLabel();
+        encoderRegistersLabel = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         channelTextField = new javax.swing.JTextField();
         jPanel3 = new javax.swing.JPanel();
         receiverTextField = new javax.swing.JTextField();
+        decoderRegistersLabel = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setMinimumSize(new java.awt.Dimension(200, 201));
 
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Kodavimas"));
         jPanel1.setLayout(new java.awt.BorderLayout());
@@ -87,8 +122,8 @@ public class Gui extends javax.swing.JFrame {
         });
         jPanel1.add(senderTextField, java.awt.BorderLayout.CENTER);
 
-        registersLabel.setText("REG");
-        jPanel1.add(registersLabel, java.awt.BorderLayout.PAGE_END);
+        encoderRegistersLabel.setText("REG");
+        jPanel1.add(encoderRegistersLabel, java.awt.BorderLayout.PAGE_END);
 
         getContentPane().add(jPanel1, java.awt.BorderLayout.PAGE_START);
 
@@ -109,6 +144,9 @@ public class Gui extends javax.swing.JFrame {
 
         receiverTextField.setEditable(false);
         jPanel3.add(receiverTextField, java.awt.BorderLayout.CENTER);
+
+        decoderRegistersLabel.setText("REG");
+        jPanel3.add(decoderRegistersLabel, java.awt.BorderLayout.PAGE_END);
 
         getContentPane().add(jPanel3, java.awt.BorderLayout.PAGE_END);
 
@@ -159,11 +197,12 @@ public class Gui extends javax.swing.JFrame {
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField channelTextField;
+    private javax.swing.JLabel decoderRegistersLabel;
+    private javax.swing.JLabel encoderRegistersLabel;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JTextField receiverTextField;
-    private javax.swing.JLabel registersLabel;
     private javax.swing.JTextField senderTextField;
     // End of variables declaration//GEN-END:variables
 }

@@ -4,11 +4,12 @@ package lt.banelis.aurelijus;
  *
  * @author Aurelijus Banelis
  */
-public class Coding {
+public class Encoder {
     private Channel channel;
     private Boolean[] registers = new Boolean[6];
-
-    public Coding(Channel channel) {
+    private boolean inSynchronization = false;
+    
+    public Encoder(Channel channel) {
         this.channel = channel;
         for (int i = 0; i < registers.length; i++) {
            registers[i] = Boolean.FALSE; 
@@ -28,10 +29,24 @@ public class Coding {
     }
     
     public void encode(Boolean bit) {
+        if (!inSynchronization) {
+            synchroniseRegisters();
+            inSynchronization = true;
+        }
+        encodeBit(bit);
+    }
+
+    private void synchroniseRegisters() {
+        for (int i = 0; i < registers.length; i++) {
+            encodeBit(Boolean.FALSE);
+        }
+    }
+    
+    private void encodeBit(Boolean bit) {
         channel.put(bit);
         boolean syndrome = bit ^ registers[1] ^ registers[4] ^ registers[5];
         channel.put(syndrome);
-        moveRegisters(bit);
+        moveRegisters(bit);        
     }
     
     private void moveRegisters(Boolean first) {
@@ -43,5 +58,9 @@ public class Coding {
     
     public Boolean[] getRegisters() {
         return registers;
+    }
+
+    public boolean isSynchronized() {
+        return inSynchronization;
     }
 }

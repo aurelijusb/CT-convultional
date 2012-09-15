@@ -4,12 +4,13 @@ package lt.banelis.aurelijus;
  *
  * @author Aurelijus Banelis
  */
-public class Decoding {
+public class Decoder {
     private Channel channel;
     private Boolean[] registers = new Boolean[6];
     private Boolean[] sumRegisters = new Boolean[6];
+    private boolean inSynchronization = false;
     
-    public Decoding(Channel channel) {
+    public Decoder(Channel channel) {
         this.channel = channel;
         for (int i = 0; i < registers.length; i++) {
            registers[i] = Boolean.FALSE; 
@@ -18,6 +19,14 @@ public class Decoding {
     }
     
     public Boolean read() {
+        if (!inSynchronization) {
+            synchroniseRegisters();
+            inSynchronization = true;
+        }
+        return readBit();
+    }
+    
+    private Boolean readBit() {
         Boolean data = channel.retrieve();
         if (data != null) {
             Boolean syndrome = channel.retrieve();
@@ -46,7 +55,13 @@ public class Decoding {
             return null;
         }
     }
-        
+
+    private void synchroniseRegisters() {
+        for (int i = 0; i < registers.length; i++) {
+            readBit();
+        }
+    }
+    
     private Boolean mde(Boolean[] bits) {
         int ones = 0;
         int zeros = 0;
@@ -76,4 +91,18 @@ public class Decoding {
         }
         return result.toString();
     }
+
+    public Boolean[] getRegisters() {
+        return registers;
+    }
+
+    public Boolean[] getSumRegisters() {
+        return sumRegisters;
+    }
+
+    public boolean isSynchronized() {
+        return inSynchronization;
+    }
+    
+    
 }
