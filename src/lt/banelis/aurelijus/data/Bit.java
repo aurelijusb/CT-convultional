@@ -101,6 +101,13 @@ public class Bit extends AbstractDataStructure {
                 return data;
             }
         });
+        if (isInputEnabled()) {
+            if (data != null && data.booleanValue()) {
+                one.requestFocus();
+            } else {
+                zero.requestFocus();
+            }
+        }
     }
     
     @Override

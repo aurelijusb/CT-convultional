@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.util.LinkedList;
+import java.util.List;
 import javax.swing.JPanel;
 
 /**
@@ -113,7 +114,14 @@ public abstract class AbstractDataStructure extends JPanel {
         }
     }
 
-
+    protected List<Boolean> getOriginal() {
+        if (sender != null) {
+            return sender.getBuffer();
+        } else {
+            return null;
+        }
+    }
+    
     protected void paintBuffer(Graphics g) {
         setFont(font);
         paintBuffer(g, font.getSize(), font.getSize(), 4);
@@ -146,14 +154,20 @@ public abstract class AbstractDataStructure extends JPanel {
                     g.setColor(foreground);
                     g.drawRect(x - 1, 1, width - 2, height - 2);
                 }
-                g.setColor(Color.BLACK);
+                if (getOriginal() != null &&
+                    getOriginal().get(length - i) != bit) {
+                    g.setColor(Color.RED);
+                    g.drawRect(x, height, width, 2);
+                } else {
+                    g.setColor(Color.BLACK);
+                }
                 g.drawString(symbol + "", x, height);
             }
             i--;
         }
     }
     
-    
+
     protected void increaseSinchronisation() {
         synchronisation++;
     }

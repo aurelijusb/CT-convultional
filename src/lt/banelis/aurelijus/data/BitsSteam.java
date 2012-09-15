@@ -3,6 +3,8 @@ package lt.banelis.aurelijus.data;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  *
@@ -10,6 +12,7 @@ import java.util.Collection;
  */
 public class BitsSteam extends AbstractDataStructure {   
     private static final Font smallFont = font.deriveFont(10);
+    private LinkedList<Boolean> original = new LinkedList<Boolean>();
     
     public BitsSteam() {
         super(false);
@@ -32,6 +35,15 @@ public class BitsSteam extends AbstractDataStructure {
         }
     }
 
+    public void setOriginal(Collection<Boolean> data) {
+        original.addAll(data);
+    }
+
+    @Override
+    protected List<Boolean> getOriginal() {
+        return original;
+    }
+    
     @Override
     public Iterable<Boolean> getData() {
         return getBuffer();

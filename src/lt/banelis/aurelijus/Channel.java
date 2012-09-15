@@ -1,6 +1,8 @@
 package lt.banelis.aurelijus;
 
+import java.util.Collection;
 import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -9,12 +11,21 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class Channel {
     public Queue<Boolean> queue = new LinkedBlockingQueue<Boolean>();
+    public Queue<Boolean> queueOriginal = new LinkedBlockingQueue<Boolean>();
+    private double noise = 0;
+    private Random randomGenerator = new Random();
     
     public void put(Boolean data) {
+        double random = randomGenerator.nextFloat();
+        queueOriginal.add(data);
+        if (random <= noise) {
+            data = !data;
+        }
         queue.add(data);
     }
     
     public Boolean retrieve() {
+        queueOriginal.poll();
         return queue.poll();
     }
 
@@ -47,8 +58,16 @@ public class Channel {
         }
         return result.toString();
     }
+
+    public void setNoise(double noise) {
+        this.noise = noise;
+    }
     
     public Iterable<Boolean> getBuffer() {
         return queue;
+    }
+    
+    public Collection<Boolean> getOriginalBuffer() {
+        return queueOriginal;
     }
 }

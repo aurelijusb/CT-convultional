@@ -15,22 +15,7 @@ public class Encoder {
            registers[i] = Boolean.FALSE; 
         }
     }
-    
-    /**
-     * @deprecated Use GUi
-     */
-    public void encode(String binary) {
-        for (byte b : binary.getBytes()) {
-            if (b == '1') {
-                encode(Boolean.TRUE);
-            } else if (b == '0') {
-                encode(Boolean.FALSE);
-            } else {
-                //TODO: error
-            }
-        }
-    }
-    
+       
     public void encode(Boolean bit) {
         channel.put(bit);
         boolean syndrome = bit ^ registers[1] ^ registers[4] ^ registers[5];
