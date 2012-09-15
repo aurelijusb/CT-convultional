@@ -10,12 +10,8 @@ public class Decoder {
     private Channel channel;
     private Boolean[] registers = new Boolean[6];
     private Boolean[] sumRegisters = new Boolean[6];
-    public static final int synchronisationLenth = 6;
+    public static final int synchronisationLenth = Encoder.synchronisationLenth;
     private int received = 0;
-    
-    //FIXME: no debugh info
-    private Boolean sum1 = Boolean.FALSE;
-    private Boolean mde = Boolean.FALSE;
     
     public Decoder(Channel channel) {
         this.channel = channel;
@@ -44,9 +40,9 @@ public class Decoder {
          */
         if (data != null && syndrome != null) {
             /* Calculating output */
-            sum1 = data ^ syndrome ^ registers[1] ^ registers[4] ^
+            Boolean sum1 = data ^ syndrome ^ registers[1] ^ registers[4] ^
                            registers[5];
-            mde = mde(new Boolean[] {sum1, sumRegisters[0],
+            Boolean mde = mde(new Boolean[] {sum1, sumRegisters[0],
                               sumRegisters[3], sumRegisters[5]});
             Boolean sumOut = registers[5] ^ mde;
 
@@ -129,12 +125,5 @@ public class Decoder {
 
     public Boolean[] getSumRegisters() {
         return sumRegisters;
-    }
-
-    /**
-     * @deprecated debug functions
-     */
-    public Boolean[] getSums() {
-        return new Boolean[] {sum1, mde};
     }
 }

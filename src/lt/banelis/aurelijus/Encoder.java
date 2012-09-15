@@ -7,7 +7,7 @@ package lt.banelis.aurelijus;
 public class Encoder {
     private Channel channel;
     private Boolean[] registers = new Boolean[6];
-    public static final int synchronisationLenth = 6;
+    public static final int synchronisationLenth = 5;
     
     public Encoder(Channel channel) {
         this.channel = channel;

@@ -57,7 +57,7 @@ public class BitTest {
         assertEquals(2, storing1);
     }
     
-    
+
     /*
      * Utilities
      */

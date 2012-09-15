@@ -9,6 +9,7 @@ import javax.swing.JComponent;
 import javax.swing.text.JTextComponent;
 import lt.banelis.aurelijus.data.AbstractDataStructure;
 import lt.banelis.aurelijus.data.Bit;
+import lt.banelis.aurelijus.data.BitsSteam;
 
 /**
  * convolutional coding.
@@ -27,6 +28,7 @@ public class Gui extends javax.swing.JFrame {
     private final static Color different = new Color(255, 128, 128);
     private AbstractDataStructure sender = new Bit(true);
     private AbstractDataStructure receiver = new Bit(false);
+    private AbstractDataStructure media = new BitsSteam();
     
     
     public Gui() {
@@ -39,6 +41,8 @@ public class Gui extends javax.swing.JFrame {
     private void initialiseView() {
         /* GUI */
         encoderPanel.add(sender, BorderLayout.CENTER);
+        channelTextField.setVisible(false);
+        channelPanel.add(media, BorderLayout.CENTER);
         decoderPanel.add(receiver, BorderLayout.CENTER);
         receiver.setSender(sender);
 
@@ -77,7 +81,7 @@ public class Gui extends javax.swing.JFrame {
     }
     
     private void updateChannel() {
-        channelTextField.setText(channel.toString());
+        media.setData(channel.getBuffer());
     }
     
     public void updateChannel(String text) {
@@ -104,9 +108,7 @@ public class Gui extends javax.swing.JFrame {
         decoderRegistersLabel.setText("Registrai: " +
                                       toDecimals(decoder.getRegisters()) +
                                       " | " +
-                                      toDecimals(decoder.getSumRegisters()) +
-                                      " | " +
-                                      toDecimals(decoder.getSums()));
+                                      toDecimals(decoder.getSumRegisters()));
     }
     
     private String toDecimals(Boolean[] bits) {

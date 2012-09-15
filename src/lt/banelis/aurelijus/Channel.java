@@ -35,9 +35,6 @@ public class Channel {
         }
     }
 
-    /**
-     * @deprecated use GUI converter
-     */
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();

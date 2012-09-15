@@ -1,7 +1,9 @@
 package lt.banelis.aurelijus.data;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.util.LinkedList;
 import javax.swing.JPanel;
 
 /**
@@ -12,9 +14,16 @@ import javax.swing.JPanel;
  * @author Aurelijus Banelis
  */
 public abstract class AbstractDataStructure extends JPanel {
+    protected static final Font font = new Font("monospaced", Font.BOLD, 16);
     private InputListner listener;
     private boolean inputEnabled;
     private AbstractDataStructure sender = null;
+    private int synchronisation = 0;
+    private LinkedList<Boolean> buffer = new LinkedList<Boolean>();
+    private final Color[] backgrounds = {new Color(220, 255, 220),
+                                         new Color(220, 220, 255)};
+    private final Color[] foregrounds = {new Color(200, 235, 200),
+                                         new Color(200, 200, 235)};
     
     /**
      * Interface to handle updated data.
@@ -55,12 +64,6 @@ public abstract class AbstractDataStructure extends JPanel {
     
     
     /**
-     * Compare if data is equal.
-     */
-    protected abstract boolean equalData(AbstractDataStructure object);
-    
-    
-    /**
      * Converts binary into concrete data and stores inside object.
      * 
      * Representation is updated.
@@ -75,6 +78,7 @@ public abstract class AbstractDataStructure extends JPanel {
         if (listener != null) {
             listener.onUpdated(data);
         }
+        repaint();
     }
     
     
@@ -109,25 +113,53 @@ public abstract class AbstractDataStructure extends JPanel {
         }
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-//        paintEquals(g);
+
+    protected void paintBuffer(Graphics g) {
+        setFont(font);
+        paintBuffer(g, font.getSize(), font.getSize(), 4);
+    }
+    
+    protected final void paintBuffer(Graphics g, int width, int height,
+                                     int step) {
+        int padding = synchronisation * width;
+        final int length = buffer.size() - 1;
+        int i = length;        
+        Color background = backgrounds[0];
+        Color foreground = foregrounds[0];
+        for (Boolean bit : buffer) {
+            /* Position and value */
+            int x = padding + width * i;
+            int symbol = bit ? 1 : 0;
+            
+            /* Color */
+            if ((length - i) % step == 0) {
+                int colorIndex = ((length - i) % (step * 2) == 0) ? 0 : 1;
+                background = backgrounds[colorIndex];
+                foreground = foregrounds[colorIndex];
+            }
+                       
+            /* Drawing */
+            if (x + width < getWidth()) {
+                g.setColor(background);
+                g.fillRect(x, 0, width, height);
+                if (bit) {
+                    g.setColor(foreground);
+                    g.drawRect(x - 1, 1, width - 2, height - 2);
+                }
+                g.setColor(Color.BLACK);
+                g.drawString(symbol + "", x, height);
+            }
+            i--;
+        }
+    }
+    
+    
+    protected void increaseSinchronisation() {
+        synchronisation++;
     }
 
-    private void paintEquals(Graphics g) {
-        if (sender != null && !inputEnabled) {
-            Color oldColor = g.getColor();
-            if (equalData(sender)) {
-                g.setColor(Color.GREEN);
-            } else {
-                g.setColor(Color.RED);
-            }
-            final int borderSize = 4;
-            for (int i = 0; i < borderSize; i++) {
-                g.drawRect(i, i, getWidth() - (i * 2), getHeight() - (i * 2));
-            }
-            g.setColor(oldColor);
-        }
+    
+    protected LinkedList<Boolean> getBuffer() {
+        return buffer;
     }
 }
