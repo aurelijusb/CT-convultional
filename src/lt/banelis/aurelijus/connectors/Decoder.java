@@ -1,33 +1,55 @@
-package lt.banelis.aurelijus;
+package lt.banelis.aurelijus.connectors;
 
+import java.util.Collection;
 import java.util.LinkedList;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 /**
  *
  * @author Aurelijus Banelis
  */
-public class Decoder {
-    private Channel channel;
+public class Decoder extends JPanel implements Connector {
     private Boolean[] registers = new Boolean[6];
     private Boolean[] sumRegisters = new Boolean[6];
-    public static final int synchronisationLenth = Encoder.synchronisationLenth;
-    private int received = 0;
+    private JLabel registersLabel = new JLabel("Registrai");
     
-    public Decoder(Channel channel) {
-        this.channel = channel;
+    public Decoder() {
+        initialiseRegisters();
+        initialiseView();
+    }
+    
+    
+    /*
+     * Calculations
+     */
+    
+    private void initialiseRegisters() {
         for (int i = 0; i < registers.length; i++) {
            registers[i] = Boolean.FALSE; 
            sumRegisters[i] = Boolean.FALSE;
         }
     }
 
-    public Boolean read() {
-        Boolean data = channel.retrieve();
-        Boolean syndrome = channel.retrieve();        
-        return read(data, syndrome);
+    @Override
+    public Collection<Boolean> transform(Collection<Boolean> data) {
+        LinkedList<Boolean> list = new LinkedList<Boolean>();
+        Boolean dataBit = null;
+        int i = 0;
+        for (Boolean bit : data) {
+            if (i % 2 == 0) {
+                dataBit = bit;
+            } else {
+                list.add(decode(dataBit, bit));
+            }
+            i++;
+        }
+        updateRegistersView();
+        return list;
     }
-    
-    private Boolean read(Boolean data, Boolean syndrome) {
+
+    private Boolean decode(Boolean data, Boolean syndrome) {
+        
         /* Variable and state diagram relation:
          *
          * data->------+-- registers ------- sumOut --> 
@@ -79,51 +101,20 @@ public class Decoder {
             return Boolean.FALSE;
         }
     }
+ 
     
-    public Iterable<Boolean> readAll() {
-        LinkedList<Boolean> all = new LinkedList<Boolean>();
-        Boolean bit;
-        while ((bit = read()) != null) {
-            if (received > synchronisationLenth) {
-                all.add(bit);
-            } else {
-                all.add(null);
-            }
-            received++;
-        }
-        return all;
-    }
-    
-    public Iterable<Boolean> resetSynchronisationCounter() {
-        LinkedList<Boolean> all = new LinkedList<Boolean>();
-        for (int i = 0; i < synchronisationLenth; i++) {
-            all.add(read(Boolean.FALSE, Boolean.FALSE));
-        }
-        received = 0;
-        return all;
-    }
-    
-    /**
-     * @deprecated use GUI
+    /*
+     * Graphical user interface
      */
-    public String readToString() {
-        StringBuilder result = new StringBuilder();
-        Boolean bit;
-        while ((bit = read()) != null) {
-            if (bit.booleanValue()) {
-                result.append("1");
-            } else {
-                result.append("0");
-            }
-        }
-        return result.toString();
+    
+    private void initialiseView() {
+        add(registersLabel);
+        updateRegistersView();
     }
-
-    public Boolean[] getRegisters() {
-        return registers;
-    }
-
-    public Boolean[] getSumRegisters() {
-        return sumRegisters;
+    
+    private void updateRegistersView() {
+        registersLabel.setText("Dekodatoriaus registrai: " +
+                               Encoder.toDecimals(registers) + " | " +
+                               Encoder.toDecimals(sumRegisters));
     }
 }

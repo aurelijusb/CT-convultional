@@ -2,6 +2,7 @@ package lt.banelis.aurelijus.data;
 
 import java.awt.BorderLayout;
 import java.awt.Button;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -9,8 +10,9 @@ import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
-import java.util.Iterator;
-import javax.swing.JLabel;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import javax.swing.JPanel;
 
 /**
@@ -19,23 +21,18 @@ import javax.swing.JPanel;
  * @author Aurelijus Banelis
  */
 public class Bit extends AbstractDataStructure {
-    private Boolean data;
-    private One<Boolean> iterator = new One<Boolean>() {
-        @Override
-        protected Boolean getElement() {
-            return data;
-        }
-    };
+    private Boolean data = Boolean.FALSE;
+    private boolean notEmpty = false;
     private Button one = null;
     private Button zero = null;
-    private JPanel bufferPanel = new JPanel() {
+    private JPanel historyPanel = new JPanel() {
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             paintBuffer(g);
         }
     };
-    
+
     public Bit(boolean inputEnabled) {
         super(inputEnabled);
         if (inputEnabled) {
@@ -43,95 +40,65 @@ public class Bit extends AbstractDataStructure {
         } else {
             initialiseVisible();
         }
+        historyPanel.setFont(super.font);
     }
+
     
     /*
-     * Storing data
+     * Storing and retrieving data
      */
     
-    /**
-     * Encapsulating one element in iterator.
-     * 
-     * @param <T> type
-     */
-    protected static abstract class One<T> implements Iterable<T> {
-        protected abstract T getElement();
-        
-        public Iterator<T> iterator() {
-            return new Iterator<T>() {
-                private boolean first = true;
-                
-                public boolean hasNext() {
-                    return first;
-                }
-
-                public T next() {
-                    if (first) {
-                        first = false;
-                        return getElement();
-                    } else {
-                        return null;
-                    }
-                }
-
-                public void remove() { }
-            };
-        }
-    }
-      
     @Override
-    protected void storeData(Iterable<Boolean> data) {
-        if (data.iterator().hasNext()) {
+    protected void putDataImplementation(Collection<Boolean> data) {
+        if (data != null && data.iterator().hasNext()) {
             this.data = data.iterator().next();
-        } else {
-            //TODO: throw
-            System.err.println("Data empty");
         }
-        if (this.data != null) {
-            getBuffer().add(this.data);
-        } else {
-            increaseSinchronisation();
-        }
+        notEmpty = true;
+    }
+    
+    public void putData(boolean data) {
+        putData(oneElement(data));
     }
 
-    public void setData(final Boolean data) {
-        setData(new One<Boolean>() {
-            @Override
-            protected Boolean getElement() {
-                return data;
-            }
-        });
-        if (isInputEnabled()) {
-            if (data != null && data.booleanValue()) {
-                one.requestFocus();
-            } else {
-                zero.requestFocus();
-            }
+    @Override
+    protected Collection<Boolean> viewData() {
+        if (notEmpty) {
+            return oneElement(data);
+        } else {
+            return Collections.EMPTY_LIST;
         }
     }
     
+    private Collection<Boolean> oneElement(boolean data) {
+        ArrayList<Boolean> list = new ArrayList<Boolean>(1);
+        list.add(data);
+        return list;
+    }
+
     @Override
-    public Iterable<Boolean> getData() {
-        return iterator;
+    protected Collection<Boolean> retrieveDataImplementation() {
+         Collection<Boolean> list = viewData();
+         notEmpty = false;
+         return list;
     }
     
     
     /*
-     * Representation
+     * Graphical user interface
      */
-    
+       
     private void initialiseEditable() {
         one = new Button("1");
         zero = new Button("0");
         
         one.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                setData(true);
+                putData(true);
             }
         });
         zero.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                setData(false);
+                putData(false);
             }
         });
         
@@ -141,15 +108,12 @@ public class Bit extends AbstractDataStructure {
         
         setLayout(new BorderLayout());
         add(buttons, BorderLayout.NORTH);
-        add(bufferPanel, BorderLayout.CENTER);
+        add(historyPanel, BorderLayout.CENTER);
     }
     
     private void initialiseVisible() {
         super.setMinimumSize(new Dimension(20, 20));
-        setLayout(new BorderLayout());
-        
-        setLayout(new BorderLayout());
-        add(bufferPanel, BorderLayout.CENTER);
+        add(historyPanel);
     }
     
 

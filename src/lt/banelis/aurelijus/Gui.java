@@ -1,15 +1,18 @@
 package lt.banelis.aurelijus;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import javax.swing.JComponent;
+import java.util.Collection;
 import javax.swing.text.JTextComponent;
+import lt.banelis.aurelijus.connectors.Decoder;
+import lt.banelis.aurelijus.connectors.Encoder;
+import lt.banelis.aurelijus.connectors.Noise;
 import lt.banelis.aurelijus.data.AbstractDataStructure;
 import lt.banelis.aurelijus.data.Bit;
 import lt.banelis.aurelijus.data.BitsSteam;
+import lt.banelis.aurelijus.data.Hightlighter;
 
 /**
  * convolutional coding.
@@ -21,32 +24,64 @@ import lt.banelis.aurelijus.data.BitsSteam;
  * @author Aurelijus Banelis
  */
 public class Gui extends javax.swing.JFrame {
-    private Channel channel = new Channel();
-    private Encoder encoder = new Encoder(channel);
-    private Decoder decoder = new Decoder(channel);
-    private final static Color equal = new Color(128, 255, 128);
-    private final static Color different = new Color(255, 128, 128);
     private AbstractDataStructure sender = new Bit(true);
-    private AbstractDataStructure receiver = new Bit(false);
-    private AbstractDataStructure media = new BitsSteam();
+    private Encoder encoder = new Encoder();
+    private AbstractDataStructure inputChannel = new BitsSteam(true);
+    private Noise noise = new Noise();
+    private AbstractDataStructure outputChannel = new BitsSteam(false);
+    private Decoder decoder = new Decoder();
+    private AbstractDataStructure receiver = new BitsSteam(false);
     
     
     public Gui() {
         initComponents();
         initialiseView();
-        showEncoderRegisters();
-        showDecoderRegisters();
-        notImplemented();
     }
     
     private void initialiseView() {
         /* GUI */
         encoderPanel.add(sender, BorderLayout.CENTER);
-        channelPanel.add(media, BorderLayout.CENTER);
+        encoderPanel.add(encoder, BorderLayout.SOUTH);
+        channelPanel.add(inputChannel, 0);
+        channelPanel.add(noise, 1);
+        channelPanel.add(outputChannel, 2);
+        decoderPanel.add(decoder, BorderLayout.NORTH);
         decoderPanel.add(receiver, BorderLayout.CENTER);
-        receiver.setSender(sender);
-
-        /* Keys */
+        keyboardShortcuts();
+        
+        /* Synchronization and error marking */
+        Hightlighter sourceDestination = new Hightlighter(sender, receiver, 6);
+        sender.setHighliter(sourceDestination);
+        receiver.setHighliter(sourceDestination);
+        Hightlighter channel = new Hightlighter(inputChannel, outputChannel);
+        inputChannel.setHighliter(channel);
+        outputChannel.setHighliter(channel);
+        inputChannel.setHalfSize(true);
+        outputChannel.setHalfSize(true);
+        
+        /* Sending as user inputs data */
+        sender.setListerer(new Runnable() {
+            public void run() {
+                encode();
+                transfer();
+                decode();
+            }
+        });
+    }
+    
+    private void encode() {
+        inputChannel.putData(encoder.transform(sender.retrieveData()));
+    }
+    
+    private void transfer() {
+        outputChannel.putData(noise.transform(inputChannel.retrieveData()));
+    }
+    
+    private void decode() {
+        receiver.putData(decoder.transform(outputChannel.retrieveData()));
+    }
+    
+    private void keyboardShortcuts() {
         KeyListener globalKeyListener =  new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
@@ -54,105 +89,67 @@ public class Gui extends javax.swing.JFrame {
                      !(e.getComponent() instanceof JTextComponent) ) {
                     Bit bitSender = (Bit) sender;
                     if (e.getKeyChar() == '1') {
-                        bitSender.setData(true);
+                        bitSender.putData(true);
                     } else if (e.getKeyChar() == '0') {
-                        bitSender.setData(false);
+                        bitSender.putData(false);
                     }
                 }
             }
         };
         Bit.globalKeyShortcuts(this, globalKeyListener);
-        
-        /* Sending as user inputs data */
-        sender.setListerer(new AbstractDataStructure.InputListner() {
-            public void onUpdated(Iterable<Boolean> data) {
-                updateSender();
-                updateChannel();
-                updateReceiver();
-            }
-        });
     }
-    
-    private void notImplemented() {
-        viewPanel.setVisible(false);
-    }
-    
-    private void updateSender() {
-        for (Boolean element : sender.getData()) {
-            encoder.encode(element);
-        }
-        showEncoderRegisters();
-    }
-    
-    private void updateChannel() {
-        media.setData(channel.getBuffer());
-        if (media instanceof BitsSteam) {
-            ((BitsSteam) media).setOriginal(channel.getOriginalBuffer());
-        }
-    }
-    
-    public void updateChannel(String text) {
-        channel.replace(text);
-        updateReceiver();
-    }
-    
-    private void updateReceiver() {
-        receiver.setData(decoder.readAll());
-        showDecoderRegisters();
-    }
-    
     
     /*
      * Registers representation
      */
     
-    private void showEncoderRegisters() {
-        encoderRegistersLabel.setText("Registrai: " +
-                                      toDecimals(encoder.getRegisters()));
-    }
-
-    private void showDecoderRegisters() {
-        decoderRegistersLabel.setText("Registrai: " +
-                                      toDecimals(decoder.getRegisters()) +
-                                      " | " +
-                                      toDecimals(decoder.getSumRegisters()));
-    }
-    
-    private String toDecimals(Boolean[] bits) {
-        StringBuilder stringBuilder = new StringBuilder();
-        boolean first = true;
-        for (Boolean register : bits) {
-            if (first) {
-                first = false;
-            } else {
-                stringBuilder.append(" ");
-            }
-            if (register) {
-                stringBuilder.append("1");
-            } else {
-                stringBuilder.append("0");
-            }
-        }
-        return stringBuilder.toString();
-    }
-    
-    private String markSynchronized(boolean inSynchorinzation,
-                                    JComponent component) {
-        if (inSynchorinzation) {
-            component.setForeground(Color.BLACK);
-            return "Sinchronizuoti";
-        } else {
-            component.setForeground(Color.RED);
-            return "Be pradinių reikšmių";
-        }        
-    }
-
-    private void updateNoiseProbability() {
-        double probability = probabilitySlider.getValue() /
-                             (double) probabilitySlider.getMaximum();
-        channel.setNoise(probability);
-        probabilitySlider.setToolTipText(Math.round(probability * 100) + "%");
-    }
+//    private void showEncoderRegisters() {
+//        encoderRegistersLabel.setText("Registrai: " +
+//                                      toDecimals(encoder.getRegisters()));
+//    }
+//
+//    private void showDecoderRegisters() {
+//        decoderRegistersLabel.setText("Registrai: " +
+//                                      toDecimals(decoder.getRegisters()) +
+//                                      " | " +
+//                                      toDecimals(decoder.getSumRegisters()));
+//    }
+//    
+//    private String toDecimals(Boolean[] bits) {
+//        StringBuilder stringBuilder = new StringBuilder();
+//        boolean first = true;
+//        for (Boolean register : bits) {
+//            if (first) {
+//                first = false;
+//            } else {
+//                stringBuilder.append(" ");
+//            }
+//            if (register) {
+//                stringBuilder.append("1");
+//            } else {
+//                stringBuilder.append("0");
+//            }
+//        }
+//        return stringBuilder.toString();
+//    }
+//    
+//    private String markSynchronized(boolean inSynchorinzation,
+//                                    JComponent component) {
+//        if (inSynchorinzation) {
+//            component.setForeground(Color.BLACK);
+//            return "Sinchronizuoti";
+//        } else {
+//            component.setForeground(Color.RED);
+//            return "Be pradinių reikšmių";
+//        }        
+//    }
+//
+//    private void updateNoiseProbability() {
+//        double probability = probabilitySlider.getValue() /
+//                             (double) probabilitySlider.getMaximum();
+//        channel.setNoise(probability);
+//        probabilitySlider.setToolTipText(Math.round(probability * 100) + "%");
+//    }
     
     /*
      * Autogenerated Swing components layout
@@ -169,16 +166,12 @@ public class Gui extends javax.swing.JFrame {
         textRadio = new javax.swing.JRadioButton();
         imageRadio = new javax.swing.JRadioButton();
         encoderPanel = new javax.swing.JPanel();
-        encoderRegistersLabel = new javax.swing.JLabel();
         channelPanel = new javax.swing.JPanel();
-        channelOptionsPanel = new javax.swing.JPanel();
-        probabilityCheckbox = new javax.swing.JCheckBox();
-        probabilitySlider = new javax.swing.JSlider();
         decoderPanel = new javax.swing.JPanel();
-        decoderRegistersLabel = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setMinimumSize(new java.awt.Dimension(200, 300));
+        setMinimumSize(new java.awt.Dimension(300, 500));
+        setPreferredSize(new java.awt.Dimension(600, 500));
         getContentPane().setLayout(new javax.swing.BoxLayout(getContentPane(), javax.swing.BoxLayout.Y_AXIS));
 
         viewPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Duomenų tipas"));
@@ -205,71 +198,18 @@ public class Gui extends javax.swing.JFrame {
 
         encoderPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Kodavimas"));
         encoderPanel.setLayout(new java.awt.BorderLayout());
-
-        encoderRegistersLabel.setText("REG");
-        encoderPanel.add(encoderRegistersLabel, java.awt.BorderLayout.SOUTH);
-
         getContentPane().add(encoderPanel);
 
         channelPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Kanalas"));
-        channelPanel.setLayout(new java.awt.BorderLayout());
-
-        channelOptionsPanel.setLayout(new javax.swing.BoxLayout(channelOptionsPanel, javax.swing.BoxLayout.LINE_AXIS));
-
-        probabilityCheckbox.setSelected(true);
-        probabilityCheckbox.setText("Pagal tikimybę");
-        probabilityCheckbox.setToolTipText("Arba pagal tikimybę, arba pakeičiama paspaudus ant kanalo");
-        probabilityCheckbox.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                probabilityCheckboxStateChanged(evt);
-            }
-        });
-        probabilityCheckbox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                probabilityCheckboxActionPerformed(evt);
-            }
-        });
-        channelOptionsPanel.add(probabilityCheckbox);
-
-        probabilitySlider.setValue(0);
-        probabilitySlider.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                probabilitySliderStateChanged(evt);
-            }
-        });
-        channelOptionsPanel.add(probabilitySlider);
-
-        channelPanel.add(channelOptionsPanel, java.awt.BorderLayout.SOUTH);
-
+        channelPanel.setLayout(new javax.swing.BoxLayout(channelPanel, javax.swing.BoxLayout.Y_AXIS));
         getContentPane().add(channelPanel);
 
         decoderPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Dekodavimas"));
         decoderPanel.setLayout(new java.awt.BorderLayout());
-
-        decoderRegistersLabel.setText("REG");
-        decoderPanel.add(decoderRegistersLabel, java.awt.BorderLayout.PAGE_END);
-
         getContentPane().add(decoderPanel);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
-    private void probabilitySliderStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_probabilitySliderStateChanged
-        updateNoiseProbability();
-    }//GEN-LAST:event_probabilitySliderStateChanged
-
-    private void probabilityCheckboxStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_probabilityCheckboxStateChanged
-        probabilitySlider.setEnabled(probabilityCheckbox.isSelected());
-        if (probabilityCheckbox.isSelected()) {
-            updateNoiseProbability();
-        } else {
-            channel.setNoise(0);
-        }
-    }//GEN-LAST:event_probabilityCheckboxStateChanged
-
-    private void probabilityCheckboxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_probabilityCheckboxActionPerformed
-
-    }//GEN-LAST:event_probabilityCheckboxActionPerformed
 
     /**
      * @param args the command line arguments
@@ -284,16 +224,11 @@ public class Gui extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JRadioButton bitRadio;
     private javax.swing.JRadioButton bitsRadio;
-    private javax.swing.JPanel channelOptionsPanel;
     private javax.swing.JPanel channelPanel;
     private javax.swing.ButtonGroup dataRadioGroup;
     private javax.swing.JPanel decoderPanel;
-    private javax.swing.JLabel decoderRegistersLabel;
     private javax.swing.JPanel encoderPanel;
-    private javax.swing.JLabel encoderRegistersLabel;
     private javax.swing.JRadioButton imageRadio;
-    private javax.swing.JCheckBox probabilityCheckbox;
-    private javax.swing.JSlider probabilitySlider;
     private javax.swing.JRadioButton textRadio;
     private javax.swing.JPanel viewPanel;
     // End of variables declaration//GEN-END:variables

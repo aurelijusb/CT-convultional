@@ -1,98 +1,185 @@
 package lt.banelis.aurelijus.data;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 import javax.swing.JPanel;
 
 /**
  * Data structure, that can be represented to Swing or binary.
  * 
- * Used to enter and visualize various data structures.
+ * 
+ * WorkFlow:
+ * 
+ *  GUI User ___                                ___ run() [setListener()]
+ *              \___ putData() -+- [current] __/
+ *  System   ___/               :              \___ retrieveData()
+ *                              :       
+ *                              +- [history] - viewHistory()
  * 
  * @author Aurelijus Banelis
  */
 public abstract class AbstractDataStructure extends JPanel {
     protected static final Font font = new Font("monospaced", Font.BOLD, 16);
-    private InputListner listener;
+    private static final Color[] backgrounds = {new Color(220, 255, 220),
+                                                new Color(220, 220, 255)};
+    private static final Color[] foregrounds = {new Color(200, 235, 200),
+                                                new Color(200, 200, 235)};
+    
+    private Runnable listener;
+    private LinkedList<Boolean> history = new LinkedList<Boolean>();
     private boolean inputEnabled;
-    private AbstractDataStructure sender = null;
-    private int synchronisation = 0;
-    private LinkedList<Boolean> buffer = new LinkedList<Boolean>();
-    private final Color[] backgrounds = {new Color(220, 255, 220),
-                                         new Color(220, 220, 255)};
-    private final Color[] foregrounds = {new Color(200, 235, 200),
-                                         new Color(200, 200, 235)};
+    private Hightlighter hightlighter = null;
+    private int received = 0;
+    private boolean halfSize = false;
+    private Font currentFont = font;
+    
     
     /**
      * Interface to handle updated data.
      */
     public static interface InputListner {
-        public void onUpdated(Iterable<Boolean> data);
+        public void onUpdated(AbstractDataStructure object);
     }
     
-
     
     /**
      * Data structure, that can be represented to Swing or binary.
      * 
-     * @param inputEnabler <code>true</code> if user can input data from GUI,
+     * @param inputEnabled <code>true</code> if user can input data from GUI,
      *                     <code>false</code> when data from GUI is read only
      */
     public AbstractDataStructure(boolean inputEnabled) {
         this.inputEnabled = inputEnabled;
+        setPreferredSize(new Dimension(100, 50));
+        super.setFont(currentFont);
     }
     
     
-    /**
-     * Converts binary and stores data.
-     * 
-     * @see #setData(java.lang.Iterable)
+    /*
+     * Storing data
      */
-    protected abstract void storeData(Iterable<Boolean> data);
+    
+    /**
+     * Store data into object.
+     * 
+     * New data is added to object.
+     */
+    public final void putData(Collection<Boolean> data) {
+        if (needSynchronisation()) {
+            data = removeSynchronisationBits(data);
+        }
+        if (data.size() > 0) {
+            putDataImplementation(data);
+            if (listener != null) {
+                listener.run();
+            }
+            received += data.size();
+            repaint();
+        }
+    }
+
+    private boolean needSynchronisation() {
+        return hightlighter != null &&
+               received < hightlighter.getSynchronisation(this);
+    }
+    
+    private Collection<Boolean> removeSynchronisationBits(
+                                Collection<Boolean> data) {
+        int bits = received - hightlighter.getSynchronisation(this);
+        if (data.size() < bits) {
+            received += data.size();
+            data.clear();
+            return data;
+        } else {
+            ArrayList<Boolean> newData = new ArrayList<Boolean>(data.size() -
+                                                                bits);
+            int i = 0;
+            for (Boolean bit : data) {
+                if (i >= data.size() - bits) {
+                    newData.add(bit);
+                }
+                i++;
+            }
+            received += data.size() - newData.size();
+            return newData;
+        }
+    }
+    
+    /**
+     * Implementation of storing data.
+     * 
+     * @see #putData(java.lang.Iterable)
+     */
+    protected abstract void putDataImplementation(Collection<Boolean> data);
+    
+
+    /*
+     * Getting data
+     */
+    
+    /**
+     * Retrieving new data.
+     * 
+     * Data is removed from object except history.
+     * 
+     * @return  data converted to binary.
+     * @see #viewHistory()
+     */
+    public Collection<Boolean> retrieveData() {
+        Collection<Boolean> data = retrieveDataImplementation();
+        history.addAll(data);
+        return data;
+    }
 
     
     /**
-     * Converts stored data into binary.
-     *
-     * Updates representation.
-     * 
-     * @return  contained data
+     * View currently stored data without modifying it.
      */
-    public abstract Iterable<Boolean> getData();
+    protected abstract Collection<Boolean> viewData();
     
     
     /**
-     * Converts binary into concrete data and stores inside object.
+     * Implementation of retrieving data.
      * 
-     * Representation is updated.
-     * Change listeners are notified.
-     * 
-     * @param data information to be stored
-     * @see #storeData(java.lang.Iterable) 
-     * @see #setListerer(lt.banelis.aurelijus.data.AbstractDataStructure.InputListner) 
+     * @see #retrieveData()
      */
-    public final void setData(Iterable<Boolean> data) {
-        storeData(data);
-        if (listener != null) {
-            listener.onUpdated(data);
-        }
-        repaint();
-    }
+    protected abstract Collection<Boolean> retrieveDataImplementation();
     
     
     /**
      * Set handler, that is executed after data is updated.
      * 
      * @param listener  input handler
-     * @see #getData()
+     * @see #retrieveDataImplementation()
      */
-    public void setListerer(InputListner listener) {
+    public void setListerer(Runnable listener) {
         this.listener = listener;
     }
 
+    
+    /**
+     * View current and past data.
+     */
+    public Collection<Boolean> viewHistory() {
+        Collection<Boolean> current = viewData();
+        if (viewData().size() > 0) {
+            LinkedList<Boolean> whole = new LinkedList<Boolean>(history);
+            whole.addAll(current);
+            return whole;
+        } else {
+            return history;
+        }
+    }
+    
+
+    /*
+     * Graphical user interface
+     */
     
     /**
      * @return <code>true</code> when user can able to enter data from GUI,
@@ -104,37 +191,39 @@ public abstract class AbstractDataStructure extends JPanel {
     
     
     /**
-     * Save sender for comparing equality between sender and receiver
-     * 
-     * @param sender 
-     */
-    public void setSender(AbstractDataStructure sender) {
-        if (sender != null && sender.isInputEnabled()) {
-            this.sender = sender;
-        }
-    }
-
-    protected List<Boolean> getOriginal() {
-        if (sender != null) {
-            return sender.getBuffer();
-        } else {
-            return null;
-        }
+     * Set object for comparing two 2 data objects.
+     */    
+    public void setHighliter(Hightlighter hightlighter) {
+        this.hightlighter = hightlighter;
     }
     
+
+    /*
+     * Painting stream
+     */
+    
     protected void paintBuffer(Graphics g) {
-        setFont(font);
-        paintBuffer(g, font.getSize(), font.getSize(), 4);
+        if (halfSize) {
+            paintBuffer(g, currentFont.getSize(), font.getSize(), 8);
+        } else {
+            paintBuffer(g, font.getSize(), font.getSize(), 4);
+        }
     }
     
     protected final void paintBuffer(Graphics g, int width, int height,
                                      int step) {
-        int padding = synchronisation * width;
-        final int length = buffer.size() - 1;
+        int padding;
+        if (hightlighter != null) {
+            padding = hightlighter.getSynchronisation(this) * width;
+        } else {
+            padding = 0;
+        }
+        Collection<Boolean> data = viewHistory();
+        final int length = data.size() - 1;
         int i = length;        
         Color background = backgrounds[0];
         Color foreground = foregrounds[0];
-        for (Boolean bit : buffer) {
+        for (Boolean bit : data) {
             /* Position and value */
             int x = padding + width * i;
             int symbol = bit ? 1 : 0;
@@ -154,8 +243,9 @@ public abstract class AbstractDataStructure extends JPanel {
                     g.setColor(foreground);
                     g.drawRect(x - 1, 1, width - 2, height - 2);
                 }
-                if (getOriginal() != null &&
-                    getOriginal().get(length - i) != bit) {
+                int offsetFromEnd = data.size() - i - 1;
+                if (hightlighter != null && hightlighter.isDestination(this) &&
+                    !hightlighter.isEqual(offsetFromEnd)) {
                     g.setColor(Color.RED);
                     g.drawRect(x, height, width, 2);
                 } else {
@@ -166,14 +256,18 @@ public abstract class AbstractDataStructure extends JPanel {
             i--;
         }
     }
-    
 
-    protected void increaseSinchronisation() {
-        synchronisation++;
+    public void setHightlighter(Hightlighter hightlighter) {
+        this.hightlighter = hightlighter;
     }
 
-    
-    protected LinkedList<Boolean> getBuffer() {
-        return buffer;
+    public void setHalfSize(boolean halfSize) {
+        this.halfSize = halfSize;
+        if (halfSize) {
+            currentFont = font.deriveFont(8.f);
+        } else {
+            currentFont = font;
+        }
+        repaint();
     }
 }
