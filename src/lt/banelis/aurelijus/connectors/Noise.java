@@ -35,7 +35,7 @@ public class Noise extends JPanel implements Connector {
         LinkedList<Boolean> result = new LinkedList<Boolean>();
         for (Boolean bit : data) {
             double random = randomGenerator.nextFloat();
-            if (random <= noise) {
+            if (isEnabled() && random <= noise) {
                 bit = !bit;
             }
             result.add(bit);
@@ -67,5 +67,12 @@ public class Noise extends JPanel implements Connector {
                 probabilityLabel.setText("Triukšmai: " + text);
             }
         });
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        probabilitySlider.setEnabled(enabled);
+        probabilityLabel.setEnabled(enabled);
     }
 }

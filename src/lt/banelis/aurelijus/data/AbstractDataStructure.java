@@ -188,6 +188,10 @@ public abstract class AbstractDataStructure extends JPanel {
     protected final boolean isInputEnabled() {
         return inputEnabled;
     }
+
+    protected void setInputEnabled(boolean inputEnabled) {
+        this.inputEnabled = inputEnabled;
+    }
     
     
     /**
@@ -210,14 +214,17 @@ public abstract class AbstractDataStructure extends JPanel {
         }
     }
     
-    protected final void paintBuffer(Graphics g, int width, int height,
-                                     int step) {
-        int padding;
+    protected final int getBufferPadding(int width) {
         if (hightlighter != null) {
-            padding = hightlighter.getSynchronisation(this) * width;
+            return hightlighter.getSynchronisation(this) * width;
         } else {
-            padding = 0;
+            return 0;
         }
+    }
+    
+    protected void paintBuffer(Graphics g, int width, int height,
+                                     int step) {
+        int padding = getBufferPadding(width);
         Collection<Boolean> data = viewHistory();
         final int length = data.size() - 1;
         int i = length;        
@@ -227,7 +234,7 @@ public abstract class AbstractDataStructure extends JPanel {
             /* Position and value */
             int x = padding + width * i;
             int symbol = bit ? 1 : 0;
-            
+
             /* Color */
             if ((length - i) % step == 0) {
                 int colorIndex = ((length - i) % (step * 2) == 0) ? 0 : 1;
@@ -246,8 +253,7 @@ public abstract class AbstractDataStructure extends JPanel {
                 int offsetFromEnd = data.size() - i - 1;
                 if (hightlighter != null && hightlighter.isDestination(this) &&
                     !hightlighter.isEqual(offsetFromEnd)) {
-                    g.setColor(Color.RED);
-                    g.drawRect(x, height, width, 2);
+                    paintError(g, x, width, height);
                 } else {
                     g.setColor(Color.BLACK);
                 }
@@ -256,7 +262,12 @@ public abstract class AbstractDataStructure extends JPanel {
             i--;
         }
     }
-
+    
+    protected final void paintError(Graphics g, int x, int width, int height) {
+        g.setColor(Color.RED);
+        g.drawRect(x, height, width, 2);
+    }
+    
     public void setHightlighter(Hightlighter hightlighter) {
         this.hightlighter = hightlighter;
     }
