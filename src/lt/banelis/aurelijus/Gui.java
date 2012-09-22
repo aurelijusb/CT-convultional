@@ -10,11 +10,11 @@ import javax.swing.text.JTextComponent;
 import lt.banelis.aurelijus.connectors.Decoder;
 import lt.banelis.aurelijus.connectors.Encoder;
 import lt.banelis.aurelijus.connectors.Noise;
+import lt.banelis.aurelijus.connectors.Synchronizer;
 import lt.banelis.aurelijus.data.AbstractDataStructure;
 import lt.banelis.aurelijus.data.Bit;
 import lt.banelis.aurelijus.data.BitsSteam;
 import lt.banelis.aurelijus.data.Image;
-import lt.banelis.aurelijus.data.Synchronizer;
 import lt.banelis.aurelijus.data.Text;
 
 /**

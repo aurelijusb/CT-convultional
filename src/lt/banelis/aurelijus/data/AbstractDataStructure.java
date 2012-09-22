@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import javax.swing.JPanel;
+import lt.banelis.aurelijus.connectors.Synchronizer;
 
 /**
  * Data structure, that can be represented to Swing or binary.
@@ -149,10 +150,19 @@ public abstract class AbstractDataStructure extends JPanel {
         }
     }
     
+    /**
+     * Brings all values to default.
+     */
     public void reset() {
         history = new LinkedList<Boolean>();
+        resetOwn();
         repaint();
     }
+    
+    /**
+     * Brings all specific object's values to default.
+     */
+    protected abstract void resetOwn();
 
     
     /*

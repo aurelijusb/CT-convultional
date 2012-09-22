@@ -104,9 +104,8 @@ public class Text extends AbstractDataStructure {
     }
 
     @Override
-    public void reset() {
+    public void resetOwn() {
         data = new LinkedList<Boolean>();
-        super.reset();
         text.setText("");
         text.requestFocus();
     }

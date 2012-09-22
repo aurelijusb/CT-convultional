@@ -83,9 +83,8 @@ public class Bit extends AbstractDataStructure {
     }
 
     @Override
-    public void reset() {
+    public void resetOwn() {
         notEmpty = false;
-        super.reset();
     }
     
     

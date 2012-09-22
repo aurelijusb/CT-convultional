@@ -1,7 +1,8 @@
-package lt.banelis.aurelijus.data;
+package lt.banelis.aurelijus.connectors;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import lt.banelis.aurelijus.data.AbstractDataStructure;
 
 /**
  * Class, that stores synchronization data to compare data structures.

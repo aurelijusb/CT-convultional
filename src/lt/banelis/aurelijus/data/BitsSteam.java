@@ -51,10 +51,9 @@ public class BitsSteam extends AbstractDataStructure {
     }
 
     @Override
-    public void reset() {
+    public void resetOwn() {
         data = new LinkedList<Boolean>();
         errors = new HashSet<Integer>();
-        super.reset();
     }
 
     
