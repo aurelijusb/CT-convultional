@@ -12,6 +12,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 /**
+ * Random noise generator.
  *
  * @author Aurelijus Banelis
  */

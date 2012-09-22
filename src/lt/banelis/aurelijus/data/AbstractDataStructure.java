@@ -4,14 +4,14 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import javax.swing.JPanel;
 
 /**
  * Data structure, that can be represented to Swing or binary.
- * 
  * 
  * WorkFlow:
  * 
@@ -19,7 +19,7 @@ import javax.swing.JPanel;
  *              \___ putData() -+- [current] __/
  *  System   ___/               :              \___ retrieveData()
  *                              :       
- *                              +- [history] - viewHistory()
+ *                              +- [history] - viewAllData()
  * 
  * @author Aurelijus Banelis
  */
@@ -33,8 +33,9 @@ public abstract class AbstractDataStructure extends JPanel {
     private Runnable listener;
     private LinkedList<Boolean> history = new LinkedList<Boolean>();
     private boolean inputEnabled;
-    private Hightlighter hightlighter = null;
-    private int received = 0;
+    private Synchronizer syncronizer = null;
+    private AbstractDataStructure comparator = null;
+    private boolean isDestination = false;
     private boolean halfSize = false;
     private Font currentFont = font;
     
@@ -70,46 +71,18 @@ public abstract class AbstractDataStructure extends JPanel {
      * New data is added to object.
      */
     public final void putData(Collection<Boolean> data) {
-        if (needSynchronisation()) {
-            data = removeSynchronisationBits(data);
+        if (isDestination && syncronizer != null) {
+            data = syncronizer.synchronize(data);
         }
         if (data.size() > 0) {
             putDataImplementation(data);
             if (listener != null) {
                 listener.run();
             }
-            received += data.size();
             repaint();
         }
     }
 
-    private boolean needSynchronisation() {
-        return hightlighter != null &&
-               received < hightlighter.getSynchronisation(this);
-    }
-    
-    private Collection<Boolean> removeSynchronisationBits(
-                                Collection<Boolean> data) {
-        int bits = received - hightlighter.getSynchronisation(this);
-        if (data.size() < bits) {
-            received += data.size();
-            data.clear();
-            return data;
-        } else {
-            ArrayList<Boolean> newData = new ArrayList<Boolean>(data.size() -
-                                                                bits);
-            int i = 0;
-            for (Boolean bit : data) {
-                if (i >= data.size() - bits) {
-                    newData.add(bit);
-                }
-                i++;
-            }
-            received += data.size() - newData.size();
-            return newData;
-        }
-    }
-    
     /**
      * Implementation of storing data.
      * 
@@ -128,7 +101,7 @@ public abstract class AbstractDataStructure extends JPanel {
      * Data is removed from object except history.
      * 
      * @return  data converted to binary.
-     * @see #viewHistory()
+     * @see #viewAllData()
      */
     public Collection<Boolean> retrieveData() {
         Collection<Boolean> data = retrieveDataImplementation();
@@ -165,7 +138,7 @@ public abstract class AbstractDataStructure extends JPanel {
     /**
      * View current and past data.
      */
-    public Collection<Boolean> viewHistory() {
+    public Collection<Boolean> viewAllData() {
         Collection<Boolean> current = viewData();
         if (viewData().size() > 0) {
             LinkedList<Boolean> whole = new LinkedList<Boolean>(history);
@@ -176,7 +149,72 @@ public abstract class AbstractDataStructure extends JPanel {
         }
     }
     
+    public void reset() {
+        history = new LinkedList<Boolean>();
+        repaint();
+    }
 
+    
+    /*
+     * Synchronization
+     */
+    
+    public void setSyncronizer(Synchronizer syncronizer,
+                              AbstractDataStructure comparator,
+                              boolean isDestination) {
+        this.syncronizer = syncronizer;
+        this.comparator = comparator;
+        this.isDestination = isDestination;
+    }
+
+    private Collection<Boolean> getSource() {
+        if (isDestination) {
+            return viewAllData();
+        } else {
+            return comparator.viewAllData();
+        }
+    }
+    
+    private Collection<Boolean> getDestination() {
+        if (isDestination) {
+            return comparator.viewAllData();
+        } else {
+            return viewAllData();
+        }
+    }
+    
+    private boolean isEqual(int offset) {
+        return getBit(getSource(), offset) == getBit(getDestination(), offset);
+    }
+    
+    private Boolean getBit(Collection<Boolean> container, int offset) {
+        if (container.size() <= offset || offset < 0) {
+            return null;
+        } else if (container instanceof List) {
+            return ((List<Boolean>) container).get(offset);
+        } else {
+            int i = 0;
+            for (Boolean bit : container) {
+                if (i == offset) {
+                    return bit;
+                } else if (i > offset) {
+                    return null;
+                }
+                i++;
+            }
+        }
+        return null;
+    }
+    
+    protected Collection<Boolean> dataToSynchronize() {
+        if (syncronizer != null) {
+            return syncronizer.dataToSynchronize();
+        } else {
+            return Collections.EMPTY_LIST;
+        }
+    }
+    
+    
     /*
      * Graphical user interface
      */
@@ -194,38 +232,30 @@ public abstract class AbstractDataStructure extends JPanel {
     }
     
     
-    /**
-     * Set object for comparing two 2 data objects.
-     */    
-    public void setHighliter(Hightlighter hightlighter) {
-        this.hightlighter = hightlighter;
-    }
-    
-
     /*
      * Painting stream
      */
     
     protected void paintBuffer(Graphics g) {
         if (halfSize) {
-            paintBuffer(g, currentFont.getSize(), font.getSize(), 8);
+            paintBuffer(g, currentFont.getSize(), font.getSize(), 8,
+                        viewAllData());
         } else {
-            paintBuffer(g, font.getSize(), font.getSize(), 4);
+            paintBuffer(g, font.getSize(), font.getSize(), 4, viewAllData());
         }
     }
     
     protected final int getBufferPadding(int width) {
-        if (hightlighter != null) {
-            return hightlighter.getSynchronisation(this) * width;
+        if (isDestination && syncronizer != null) {
+            return syncronizer.getSynchronisation() * width;
         } else {
             return 0;
         }
     }
     
     protected void paintBuffer(Graphics g, int width, int height,
-                                     int step) {
+                              int step, Collection<Boolean> data) {
         int padding = getBufferPadding(width);
-        Collection<Boolean> data = viewHistory();
         final int length = data.size() - 1;
         int i = length;        
         Color background = backgrounds[0];
@@ -251,8 +281,7 @@ public abstract class AbstractDataStructure extends JPanel {
                     g.drawRect(x - 1, 1, width - 2, height - 2);
                 }
                 int offsetFromEnd = data.size() - i - 1;
-                if (hightlighter != null && hightlighter.isDestination(this) &&
-                    !hightlighter.isEqual(offsetFromEnd)) {
+                if (isDestination && !isEqual(offsetFromEnd)) {
                     paintError(g, x, width, height);
                 } else {
                     g.setColor(Color.BLACK);
@@ -266,10 +295,6 @@ public abstract class AbstractDataStructure extends JPanel {
     protected final void paintError(Graphics g, int x, int width, int height) {
         g.setColor(Color.RED);
         g.drawRect(x, height, width, 2);
-    }
-    
-    public void setHightlighter(Hightlighter hightlighter) {
-        this.hightlighter = hightlighter;
     }
 
     public void setHalfSize(boolean halfSize) {

@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 /**
+ * Group of bits representation.
  *
  * @author Aurelijus Banelis
  */
@@ -25,6 +26,11 @@ public class BitsSteam extends AbstractDataStructure {
             initailiseEditing();
         }
     }
+    
+    
+    /*
+     * Storing and retrieving data
+     */
     
     @Override
     protected void putDataImplementation(Collection<Boolean> data) {
@@ -45,6 +51,18 @@ public class BitsSteam extends AbstractDataStructure {
     }
 
     @Override
+    public void reset() {
+        data = new LinkedList<Boolean>();
+        errors = new HashSet<Integer>();
+        super.reset();
+    }
+
+    
+    /*
+     * Representing data
+     */
+    
+    @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         super.paintBuffer(g);
@@ -53,6 +71,7 @@ public class BitsSteam extends AbstractDataStructure {
             paintOverBit(g);
         }
     }
+    
     
     /*
      * Editing
@@ -133,8 +152,9 @@ public class BitsSteam extends AbstractDataStructure {
     }
     
     @Override
-    protected void paintBuffer(Graphics g, int width, int height, int step) {
-        super.paintBuffer(g, width, height, step);
+    protected void paintBuffer(Graphics g, int width, int height,
+                              int step, Collection<Boolean> data) {
+        super.paintBuffer(g, width, height, step, data);
         bufferWidth = width;
         bufferHeight = height;
     }
@@ -142,7 +162,7 @@ public class BitsSteam extends AbstractDataStructure {
     private int getSymbolIndex(int x) {
         x -= getBufferPadding(bufferWidth);
         int index = x / bufferWidth;
-        if (index > viewHistory().size()) {
+        if (index > viewAllData().size()) {
             index = -1;
         }
         return index;

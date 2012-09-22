@@ -2,7 +2,6 @@ package lt.banelis.aurelijus.data;
 
 import java.awt.BorderLayout;
 import java.awt.Button;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -13,6 +12,7 @@ import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 
 /**
@@ -40,7 +40,7 @@ public class Bit extends AbstractDataStructure {
         } else {
             initialiseVisible();
         }
-        historyPanel.setFont(super.font);
+        historyPanel.setFont(AbstractDataStructure.font);
     }
 
     
@@ -81,6 +81,12 @@ public class Bit extends AbstractDataStructure {
          notEmpty = false;
          return list;
     }
+
+    @Override
+    public void reset() {
+        notEmpty = false;
+        super.reset();
+    }
     
     
     /*
@@ -94,15 +100,18 @@ public class Bit extends AbstractDataStructure {
         one.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 putData(true);
+                one.requestFocus();
             }
         });
         zero.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 putData(false);
+                zero.requestFocus();
             }
         });
         
         JPanel buttons = new JPanel();
+        buttons.setLayout(new BoxLayout(buttons, BoxLayout.X_AXIS));
         buttons.add(zero);
         buttons.add(one);
         

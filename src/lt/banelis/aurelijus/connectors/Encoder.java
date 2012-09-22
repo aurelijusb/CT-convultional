@@ -1,12 +1,14 @@
 package lt.banelis.aurelijus.connectors;
 
+import java.awt.FlowLayout;
 import java.util.Collection;
 import java.util.LinkedList;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 /**
- *
+ * Encoder, which use Hagelbarger code.
+ * 
  * @author Aurelijus Banelis
  */
 public class Encoder extends JPanel implements Connector {
@@ -59,6 +61,7 @@ public class Encoder extends JPanel implements Connector {
      */
     
     private void initialiseView() {
+        setLayout(new FlowLayout(FlowLayout.LEFT));
         add(registersLabel);
         updateRegistersView();
     }
