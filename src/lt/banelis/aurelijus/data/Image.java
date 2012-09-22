@@ -220,8 +220,8 @@ public class Image extends AbstractDataStructure {
         sendButton.setEnabled(false);
         sendButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (image != null && image.getWidth() > MAX_WIDTH ||
-                                     image.getHeight() > MAX_HEIGT) {
+                if (image != null && (image.getWidth() > MAX_WIDTH ||
+                                     image.getHeight() > MAX_HEIGT)) {
                     self = Image.this;
                     errorMessage("Dideli paveikslėliai bus ilgai koduojami " +
                             "ir užims daug atminties. Naudokite " + MAX_WIDTH +

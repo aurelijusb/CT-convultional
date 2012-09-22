@@ -97,7 +97,6 @@ public class Text extends AbstractDataStructure {
     protected Collection<Boolean> retrieveDataImplementation() {
         Collection<Boolean> toRetrieve = data;
         data = new LinkedList<Boolean>();
-        text.setText("");
         return toRetrieve;
     }
 
