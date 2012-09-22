@@ -333,7 +333,14 @@ public abstract class AbstractDataStructure extends JPanel {
                 paintBuffer(g);
             }
         };
-        binary.addMouseListener(new MouseAdapter() {
+        addExternalViever(binary);
+        binary.setFont(font);
+        binary.setPreferredSize(new Dimension(100, font.getSize()));
+        return binary;
+    }
+    
+    protected void addExternalViever(JPanel panel) {
+        panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() > 1) {
@@ -341,11 +348,8 @@ public abstract class AbstractDataStructure extends JPanel {
                 }
             }
         });
-        binary.setToolTipText("Dvigubas bakstelėjimas visiems vektoriams " +
+        panel.setToolTipText("Dvigubas bakstelėjimas visiems vektoriams " +
                               "parodyti");
-        binary.setFont(font);
-        binary.setPreferredSize(new Dimension(100, font.getSize()));
-        return binary;
     }
     
     private void showBinaryTextExternally() {

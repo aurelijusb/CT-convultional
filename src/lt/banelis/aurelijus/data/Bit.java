@@ -116,11 +116,13 @@ public class Bit extends AbstractDataStructure {
         
         setLayout(new BorderLayout());
         add(buttons, BorderLayout.NORTH);
+        addExternalViever(historyPanel);
         add(historyPanel, BorderLayout.CENTER);
     }
     
     private void initialiseVisible() {
         super.setMinimumSize(new Dimension(20, 20));
+        addExternalViever(historyPanel);
         add(historyPanel);
     }
     

@@ -25,6 +25,7 @@ public class BitsSteam extends AbstractDataStructure {
         if (inputEnabled) {
             initailiseEditing();
         }
+        addExternalViever(this);
     }
     
     
@@ -139,7 +140,7 @@ public class BitsSteam extends AbstractDataStructure {
         if (markedIndex > -1 && markedIndex < viewData().size()) {
             int x = markedIndex * bufferWidth;
             int index = data.size() - markedIndex - 1;
-            String symbol = data.get(index) ? "1" : "0";;
+            String symbol = data.get(index) ? "1" : "0";
             if (errors.contains(index)) {
                  g.setColor(Color.BLUE);
             } else {

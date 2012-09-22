@@ -13,6 +13,7 @@ import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 /**
@@ -172,7 +173,8 @@ public class Text extends AbstractDataStructure {
         
         
         setLayout(new BorderLayout());
-        add(text, BorderLayout.CENTER);
+        JScrollPane pane = new JScrollPane(text);
+        add(pane, BorderLayout.CENTER);
         add(buttons, BorderLayout.SOUTH);
         JPanel binary = getStreamPanel();
         add(binary, BorderLayout.NORTH);
@@ -205,7 +207,8 @@ public class Text extends AbstractDataStructure {
                 "ilgį ( " + Character.SIZE + ")");
           binary.setLayout(new FlowLayout(FlowLayout.LEFT));
         setLayout(new BorderLayout());
-        add(text, BorderLayout.CENTER);
+        JScrollPane pane = new JScrollPane(text);
+        add(pane, BorderLayout.CENTER);
         add(binary, BorderLayout.SOUTH);
     }
 }
