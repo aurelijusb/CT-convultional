@@ -1,14 +1,23 @@
 package lt.banelis.aurelijus.data;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import lt.banelis.aurelijus.connectors.Synchronizer;
 
 /**
@@ -80,8 +89,8 @@ public abstract class AbstractDataStructure extends JPanel {
             if (listener != null) {
                 listener.run();
             }
-            repaint();
         }
+        repaint();
     }
 
     /**
@@ -264,7 +273,7 @@ public abstract class AbstractDataStructure extends JPanel {
     }
     
     protected void paintBuffer(Graphics g, int width, int height,
-                              int step, Collection<Boolean> data) {
+                              int step, final Collection<Boolean> data) {
         int padding = getBufferPadding(width);
         final int length = data.size() - 1;
         int i = length;        
@@ -281,7 +290,7 @@ public abstract class AbstractDataStructure extends JPanel {
                 background = backgrounds[colorIndex];
                 foreground = foregrounds[colorIndex];
             }
-                       
+
             /* Drawing */
             if (x + width < getWidth()) {
                 g.setColor(background);
@@ -315,5 +324,74 @@ public abstract class AbstractDataStructure extends JPanel {
             currentFont = font;
         }
         repaint();
+    }
+    
+    protected JPanel getStreamPanel() {
+        JPanel binary = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                paintBuffer(g);
+            }
+        };
+        binary.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() > 1) {
+                    showBinaryTextExternally();
+                }
+            }
+        });
+        binary.setToolTipText("Dvigubas bakstelėjimas visiems vektoriams " +
+                              "parodyti");
+        binary.setFont(font);
+        binary.setPreferredSize(new Dimension(100, font.getSize()));
+        return binary;
+    }
+    
+    private void showBinaryTextExternally() {
+        JFrame frame = new JFrame("Vektorių seka");
+        frame.setLayout(new BorderLayout());
+        frame.setSize(400, 400);
+        frame.setLocation(100, 100);
+        JScrollPane pane = new JScrollPane();
+        final JTextArea text = new JTextArea();
+        updateBinnaryTextExternal(text);
+        pane.add(text);
+        pane.setViewportView(text);
+        JButton button = new JButton("Atnaujinti");
+        button.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                updateBinnaryTextExternal(text);
+            }
+        });
+        frame.getContentPane().add(pane, BorderLayout.CENTER);
+        frame.getContentPane().add(button, BorderLayout.SOUTH);
+        frame.setVisible(true);
+    }
+    
+    private void updateBinnaryTextExternal(JTextArea text) {
+        text.setText(allDataToText());
+    }
+    
+    private String allDataToText() {
+        Collection<Boolean> data = viewAllData();
+        StringBuilder builder = new StringBuilder(data.size());
+        int i = 0;
+        for (Boolean bit : data) {
+            if (i % 32 == 0 && i != 0) {
+                builder.append("\n");
+            } else if (i % 16 == 0 && i != 0) {
+                builder.append("  ");
+            } else if (i % 4 == 0 && i != 0) {
+                builder.append(" ");
+            }
+            if (bit) {
+                builder.append("1");
+            } else {
+                builder.append("0");
+            }
+            i++;
+        }
+        return builder.toString();
     }
 }

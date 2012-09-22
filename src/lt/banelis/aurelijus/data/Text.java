@@ -1,10 +1,7 @@
 package lt.banelis.aurelijus.data;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -210,17 +207,5 @@ public class Text extends AbstractDataStructure {
         setLayout(new BorderLayout());
         add(text, BorderLayout.CENTER);
         add(binary, BorderLayout.SOUTH);
-    }
-    
-    private JPanel getStreamPanel() {
-        JPanel binary = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                paintBuffer(g);
-            }
-        };
-        binary.setFont(font);
-        binary.setPreferredSize(new Dimension(100, font.getSize()));
-        return binary;
     }
 }

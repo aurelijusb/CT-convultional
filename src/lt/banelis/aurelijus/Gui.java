@@ -42,6 +42,7 @@ public class Gui extends javax.swing.JFrame {
     private JPanel senderCard = new JPanel();
     private JPanel receiverCard = new JPanel();
     private JPanel integrityCard = new JPanel();
+    private static int progressState = 4;
     
     public Gui() {
         initComponents();
@@ -78,6 +79,31 @@ public class Gui extends javax.swing.JFrame {
         updateView();
         keyboardShortcuts();
         updateNoiseOptions();
+        Synchronizer.setProgressUpdater(new Runnable() {
+            public void run() {
+                double progress = Synchronizer.progress;
+                switch (progressState) {
+                    case 0:
+                        setTitle(Math.round(progress * 25) + "% Lyginama");
+                        break;
+                    case 1:
+                        setTitle(Math.round(progress * 25 + 25) +
+                                 "% Koduojama");
+                        break;
+                    case 2:
+                        setTitle(Math.round(progress * 25 + 50) +
+                                 "% Siunčiama kanalu");
+                    case 3:
+                        setTitle(Math.round(progress * 25 + 75) +
+                                 "% Dekoduojama");
+                        break;
+                    case 4:
+                        setTitle("Klaidas taisantis kodas");
+                        break;
+                        
+                }
+            }
+        });
         
         /* Synchronization and error highlighting */
         for (int i = 0; i < senders.length; i++) {
@@ -92,12 +118,22 @@ public class Gui extends javax.swing.JFrame {
         for (AbstractDataStructure sender : senders) {
             sender.setListerer(new Runnable() {
                 public void run() {
+                    progressState = 0;
+                    Synchronizer.updateProgress();
                     checkIntegrity();
+                    progressState = 1;
+                    Synchronizer.updateProgress();
                     encode();
+                    progressState = 2;
+                    Synchronizer.updateProgress();
                     if (noiseProbabilityRadio.isSelected()) {
                         transfer();
+                        progressState = 3;
+                        Synchronizer.updateProgress();
                         decode();
                     }
+                    progressState = 4;
+                    Synchronizer.updateProgress();
                 }
             });
         }
@@ -200,6 +236,8 @@ public class Gui extends javax.swing.JFrame {
         inputChannel.reset();
         outputChannel.reset();
         sourceDestination.reset();
+        progressState = 4;
+        setTitle("Klaidas taisantis kodas");
     }
     
     
@@ -229,6 +267,7 @@ public class Gui extends javax.swing.JFrame {
         decoderPanel = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Klaidas taisantys kodai");
         setMinimumSize(new java.awt.Dimension(300, 500));
         setPreferredSize(new java.awt.Dimension(600, 800));
         getContentPane().setLayout(new javax.swing.BoxLayout(getContentPane(), javax.swing.BoxLayout.Y_AXIS));

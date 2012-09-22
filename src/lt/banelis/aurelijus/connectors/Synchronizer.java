@@ -12,6 +12,8 @@ import lt.banelis.aurelijus.data.AbstractDataStructure;
 public class Synchronizer {
     private int synchronisation;
     private int received;
+    public static double progress = 0;
+    private static Runnable progressUpdater = null;
     
     public Synchronizer(int synchronisation) {
         this.synchronisation = synchronisation;
@@ -92,5 +94,20 @@ public class Synchronizer {
             result.add(Boolean.FALSE);
         }
         return result;
+    }
+    
+    
+    /*
+     * Progress visalization
+     */
+
+    public static void setProgressUpdater(Runnable progressUpdater) {
+        Synchronizer.progressUpdater = progressUpdater;
+    }
+    
+    public static void updateProgress() {
+        if (progressUpdater != null) {
+            progressUpdater.run();
+        }
     }
 }

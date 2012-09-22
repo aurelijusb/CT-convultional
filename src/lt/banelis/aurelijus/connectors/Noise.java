@@ -2,6 +2,7 @@ package lt.banelis.aurelijus.connectors;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Random;
@@ -33,13 +34,20 @@ public class Noise extends JPanel implements Connector {
     
     @Override
     public Collection<Boolean> transform(Collection<Boolean> data) {
-        LinkedList<Boolean> result = new LinkedList<Boolean>();
+        int size = data.size();
+        ArrayList<Boolean> result = new ArrayList<Boolean>(size);
+        long i = 0;
         for (Boolean bit : data) {
             double random = randomGenerator.nextFloat();
             if (isEnabled() && random <= noise) {
                 bit = !bit;
             }
             result.add(bit);
+            if (i % 500 == 0) {
+                Synchronizer.progress = i / (double) size;
+                Synchronizer.updateProgress();
+            }
+            i++;
         }
         return result;
     }
