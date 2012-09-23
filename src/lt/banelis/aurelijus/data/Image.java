@@ -12,9 +12,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -32,7 +32,8 @@ import lt.banelis.aurelijus.connectors.Synchronizer;
 public class Image extends AbstractDataStructure {
     private static final int MAX_WIDTH = 400;
     private static final int MAX_HEIGT = 400;
-    private List<Boolean> data = new LinkedList<Boolean>();
+    private static final int MAX_CATCH = 10000;
+    private Collection<Boolean> data = new LinkedList<Boolean>();
     private BufferedImage image = null;
     private boolean loading = false;
     private JScrollPane container = new JScrollPane();
@@ -55,21 +56,34 @@ public class Image extends AbstractDataStructure {
     
     @Override
     protected void putDataImplementation(Collection<Boolean> data) {
-        this.data.addAll(data);
-        binaryToImage(data);
+        if (data.size() < MAX_CATCH) {
+            this.data.addAll(data);
+        } else if (this.data.size() > 0) {
+            this.data = skipSynchronization(data);
+        } else {
+            this.data = data;
+        }
+        image = toImage(this.data);
+        self = this;
+        updateImage();
     }
     
-    private void binaryToImage(Collection<Boolean> data) {
-        Iterator<Boolean> iterator = data.iterator();
-        int width = toInteger(getNextInteger(iterator));
-        int height = toInteger(getNextInteger(iterator));
-        self = this;
-        if (width > 0 && height > 0) {
-            image = toImage(data);
+    private Collection<Boolean> skipSynchronization(Collection<Boolean> data) {
+        int toSynchronize = dataToSynchronize().size();
+        int size = data.size() - toSynchronize;
+        if (size > 0) {
+            ArrayList<Boolean> result = new ArrayList<Boolean>(size);
+            long i = 0;
+            for (Boolean bit : data) {
+                if (i >= toSynchronize) {
+                    result.add(bit);
+                }
+                i++;
+            }
+            return result;
         } else {
-            image = toImage(this.data);
+            return Collections.EMPTY_LIST;
         }
-        updateImage();
     }
     
     protected Collection<Boolean> viewData() {
@@ -90,6 +104,7 @@ public class Image extends AbstractDataStructure {
         image = null;
         loading = false;
         sendButton.setEnabled(true);
+        updateImage();
     }
 
     
@@ -142,6 +157,8 @@ public class Image extends AbstractDataStructure {
             }
             return image;
         } else {
+            errorMessage("Paveikslėlio dydis neigiamas: " + width + "x" +
+                                                            height); 
             return null;
         }
     }
@@ -227,7 +244,9 @@ public class Image extends AbstractDataStructure {
                             "ir užims daug atminties. Naudokite " + MAX_WIDTH +
                             "x" + MAX_HEIGT + " ir mažesnius paveikslėlius");
                 } else if (image != null) {
-                    putData(toBinary(image));
+                    BufferedImage toSend = image;
+                    reset();
+                    putData(toBinary(toSend));
                     sendButton.setText("Siųsti kanalu");
                     sendButton.setEnabled(true);
                 }
@@ -320,7 +339,7 @@ public class Image extends AbstractDataStructure {
             canvas.setToolTipText("Paveikslėlis: " + image.getWidth() + "x" +
                                                      image.getHeight());
         } else {
-            canvas.setPreferredSize(new Dimension(50, 100));
+            canvas.setPreferredSize(new Dimension(100, 50));
             canvas.setToolTipText("Nėra paveikslėlio");
         }
         container.add(canvas);

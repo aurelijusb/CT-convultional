@@ -2,9 +2,11 @@ package lt.banelis.aurelijus.data;
 
 import java.awt.BorderLayout;
 import java.awt.Button;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JPanel;
 
 /**
@@ -23,8 +26,8 @@ import javax.swing.JPanel;
 public class Bit extends AbstractDataStructure {
     private Boolean data = Boolean.FALSE;
     private boolean notEmpty = false;
-    private Button one = null;
-    private Button zero = null;
+    private JButton one = null;
+    private JButton zero = null;
     private JPanel historyPanel = new JPanel() {
         @Override
         protected void paintComponent(Graphics g) {
@@ -40,6 +43,7 @@ public class Bit extends AbstractDataStructure {
         } else {
             initialiseVisible();
         }
+        super.setBackground(Color.red);
         historyPanel.setFont(AbstractDataStructure.font);
     }
 
@@ -93,29 +97,28 @@ public class Bit extends AbstractDataStructure {
      */
        
     private void initialiseEditable() {
-        one = new Button("1");
-        zero = new Button("0");
+        one = new JButton(" 1 ");
+        zero = new JButton(" 0 ");
         
         one.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 putData(true);
-                one.requestFocus();
+//                one.requestFocus();
             }
         });
         zero.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 putData(false);
-                zero.requestFocus();
+//                zero.requestFocus();
             }
         });
         
-        JPanel buttons = new JPanel();
-        buttons.setLayout(new BoxLayout(buttons, BoxLayout.X_AXIS));
-        buttons.add(zero);
-        buttons.add(one);
+        JPanel controlls = new JPanel();
+        controlls.add(zero);
+        controlls.add(one);
         
         setLayout(new BorderLayout());
-        add(buttons, BorderLayout.NORTH);
+        add(controlls, BorderLayout.NORTH);
         addExternalViever(historyPanel);
         add(historyPanel, BorderLayout.CENTER);
     }

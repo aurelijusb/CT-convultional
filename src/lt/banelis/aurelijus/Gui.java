@@ -100,8 +100,8 @@ public class Gui extends javax.swing.JFrame {
                     case 4:
                         setTitle("Klaidas taisantis kodas");
                         break;
-                        
                 }
+                repaint();
             }
         });
         
@@ -374,7 +374,11 @@ public class Gui extends javax.swing.JFrame {
 
     private void resendButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resendButtonActionPerformed
         transfer();
+        progressState = 3;
+        Synchronizer.updateProgress();
         decode();
+        progressState = 4;
+        Synchronizer.updateProgress();
         inputChannel.repaint();
     }//GEN-LAST:event_resendButtonActionPerformed
 
