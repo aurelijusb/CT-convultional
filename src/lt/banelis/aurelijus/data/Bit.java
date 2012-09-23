@@ -1,25 +1,19 @@
 package lt.banelis.aurelijus.data;
 
 import java.awt.BorderLayout;
-import java.awt.Button;
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import javax.swing.BoxLayout;
+import java.util.LinkedList;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
 /**
- * Bit representation.
+ * Duomenų struktūra skirta įvesti, saugoti ir vaizduoti bitą (q=2 vektorių).
  * 
  * @author Aurelijus Banelis
  */
@@ -36,6 +30,12 @@ public class Bit extends AbstractDataStructure {
         }
     };
 
+    /**
+     * Sukuriamas nauja duomenų struktūra
+     * 
+     * @param inputEnabled <code>true</code>, jei ji skirta duomeų įvedimui,
+     *                     <code>false</code> jei ji skirta tik atvaizdavimui.
+     */
     public Bit(boolean inputEnabled) {
         super(inputEnabled);
         if (inputEnabled) {
@@ -49,9 +49,17 @@ public class Bit extends AbstractDataStructure {
 
     
     /*
-     * Storing and retrieving data
+     * Funkcijos skirtos duomenų saugojimui ir paėmimui
      */
     
+    /**
+     * Duomenų pridėjimas.
+     * 
+     * Duomenų struktūroje saugomas tik bitas, todėl iš visos sekos paiimamas
+     * tik pirmas elementas.
+     * 
+     * @param data  naujų duomenų seka.
+     */
     @Override
     protected void putDataImplementation(Collection<Boolean> data) {
         if (data != null && data.iterator().hasNext()) {
@@ -60,25 +68,50 @@ public class Bit extends AbstractDataStructure {
         notEmpty = true;
     }
     
+    /**
+     * Pridedami duomenys.
+     * 
+     * @param data  domuo (bitas)
+     */
     public void putData(boolean data) {
         putData(oneElement(data));
     }
 
+    /**
+     * Peržiūrimi dabartiniai duomenys.
+     * 
+     * Kadangi struktūroje galima saugoti tik 1 bitą, tai ir rezultatas bus
+     * arba iš vieno elemento arba tuščias.
+     * 
+     * @return  sąrašas su duomeninmis.
+     */
     @Override
     protected Collection<Boolean> viewData() {
         if (notEmpty) {
             return oneElement(data);
         } else {
-            return Collections.EMPTY_LIST;
+            return new LinkedList<Boolean>();
         }
     }
     
-    private Collection<Boolean> oneElement(boolean data) {
+    /**
+     * Sugeneruojamas sąrašas iš vieno elemento.
+     * 
+     * @param data  domuo (bitas)
+     * @return      sąrašas iš vieno elemento.
+     */
+    private static Collection<Boolean> oneElement(boolean data) {
         ArrayList<Boolean> list = new ArrayList<Boolean>(1);
         list.add(data);
         return list;
     }
 
+    /**
+     * Išimamas bitas.
+     * 
+     * @return  sąrašą iš vieno elemento, jei struktūroje yra bitas,
+     *          arba tuščias sąrašas, jei ši struktūra tuščia
+     */
     @Override
     protected Collection<Boolean> retrieveDataImplementation() {
          Collection<Boolean> list = viewData();
@@ -86,6 +119,9 @@ public class Bit extends AbstractDataStructure {
          return list;
     }
 
+    /**
+     * Būsena atstatoma į pradinę.
+     */
     @Override
     public void resetOwn() {
         notEmpty = false;
@@ -93,56 +129,47 @@ public class Bit extends AbstractDataStructure {
     
     
     /*
-     * Graphical user interface
+     * Funkcijos skirtos grafinei naudotojo sąsajai.
      */
-       
+
+    /**
+     * Sugeneruojami elementai, skirti bitų įvedimui.
+     */
     private void initialiseEditable() {
+        /* Mygtukų sukūrimas */
         one = new JButton(" 1 ");
         zero = new JButton(" 0 ");
         
+        /* Veiksmai paspaudus mygtukus */
         one.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 putData(true);
-//                one.requestFocus();
             }
         });
         zero.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 putData(false);
-//                zero.requestFocus();
             }
         });
         
+        /* Mygtukų skydelis */
         JPanel controlls = new JPanel();
         controlls.add(zero);
         controlls.add(one);
         
+        /* Galutinis skydelis */
         setLayout(new BorderLayout());
         add(controlls, BorderLayout.NORTH);
         addExternalViever(historyPanel);
         add(historyPanel, BorderLayout.CENTER);
     }
     
+    /**
+     * Sugeneruojami elementai, skirti duomenų strukūros pavaizdavimui.
+     */
     private void initialiseVisible() {
         super.setMinimumSize(new Dimension(20, 20));
         addExternalViever(historyPanel);
         add(historyPanel);
-    }
-    
-
-    /*
-     * Utilities
-     */
-    
-    public static void globalKeyShortcuts(Container root,
-                                          KeyListener listener) {
-        for (Component component : root.getComponents()) {
-            if (component.isFocusable()) {
-                component.addKeyListener(listener);
-                if (component instanceof Container) {
-                    globalKeyShortcuts((Container) component, listener);
-                }
-            }
-        }
     }
 }

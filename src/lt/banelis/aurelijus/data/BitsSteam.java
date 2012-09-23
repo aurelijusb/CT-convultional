@@ -9,7 +9,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 /**
- * Group of bits representation.
+ * Duomenų struktūra skirta vaizduoti bitų seką.
+ * 
+ * Bitų sekos "įvedimo" realizacija gali būti panaudota bitų kanale koregavimui.
  *
  * @author Aurelijus Banelis
  */
@@ -19,30 +21,55 @@ public class BitsSteam extends AbstractDataStructure {
     private int bufferWidth;
     private int bufferHeight;
     private int markedIndex = -1;
+    private boolean externalViewerInitiated = false;
 
+    /**
+     * Naujos duomenų strukūros sukūrimas.
+     * 
+     * @param inputEnabled <code>true</code>, jei ji skirta duomeų įvedimui,
+     *                     <code>false</code> jei ji skirta tik atvaizdavimui.
+     */
     public BitsSteam(boolean inputEnabled) {
         super(inputEnabled);
         if (inputEnabled) {
             initailiseEditing();
         }
-        addExternalViever(this);
     }
     
     
     /*
-     * Storing and retrieving data
+     * Funkcijos skirtos duomenų saugojimui ir paėmimui
      */
     
+    /**
+     * Duomenų pridėjimas.
+     * 
+     * @param data  naujų bitų seka.
+     */
     @Override
     protected void putDataImplementation(Collection<Boolean> data) {
         this.data.addAll(data);
+        if (!externalViewerInitiated) {
+            addExternalViever(this);
+            externalViewerInitiated = true;
+        }
     }
 
+    /**
+     * Peržiūrimi duomenys.
+     * 
+     * @return dabartiniu metu saugojama bitų seka.
+     */
     @Override
     protected Collection<Boolean> viewData() {
         return data;
     }
 
+    /**
+     * Išimami duomenys.
+     * 
+     * @return dabartiniu metu saugota bitų seka.
+     */
     @Override
     protected Collection<Boolean> retrieveDataImplementation() {
         Collection<Boolean> toRetrieve = data;
@@ -51,6 +78,10 @@ public class BitsSteam extends AbstractDataStructure {
         return toRetrieve;
     }
 
+    
+    /**
+     * Būsena atstatoma į pradinę.
+     */
     @Override
     public void resetOwn() {
         data = new LinkedList<Boolean>();
@@ -59,9 +90,17 @@ public class BitsSteam extends AbstractDataStructure {
 
     
     /*
-     * Representing data
+     * Funkcijos skirtos grafinei naudotojo sąsajai
      */
     
+    /**
+     * Komponento (įskaitant ir bitų sekos) paišymas.
+     * 
+     * Ši funkcija iškviečiama automatiškai naudojant standartines Swing
+     * bibliotekas.
+     * 
+     * @param g piešimui skirtas objektas.
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -71,20 +110,30 @@ public class BitsSteam extends AbstractDataStructure {
             paintOverBit(g);
         }
     }
-    
-    
-    /*
-     * Editing
-     */
 
+    /**
+     * Įjungiams bitų redagavimas.
+     * 
+     * Bitų negalima ištrinti, bet galima juos pakeisti priešingu.
+     * 
+     * @param inputEnabled  ar galima bus redaguoti
+     */
     @Override
     public void setInputEnabled(boolean inputEnabled) {
         super.setInputEnabled(inputEnabled);
         repaint();
     }
     
+    /**
+     * Sukuriami elementai, skirti bitų redagavimui.
+     */
     private void initailiseEditing() {
         MouseAdapter bitsEditor = new MouseAdapter() {
+            /**
+             * Pažymimas bitas, kurį galima bus redaguoti.
+             * 
+             * @param e įvykio duomenys
+             */
             @Override
             public void mouseMoved(MouseEvent e) {
                 int lastIndex = markedIndex;
@@ -94,11 +143,24 @@ public class BitsSteam extends AbstractDataStructure {
                 }
             }
 
+            /**
+             * Pelei nesant ant komponento, nužymimi ir visi redagavimui skirti
+             * bitai.
+             * 
+             * @param e įvykio duomenys
+             */
             @Override
             public void mouseExited(MouseEvent e) {
                 markedIndex = -1;
             }
             
+            /**
+             * Pažymėtas bitas pakeičiamas priešingu.
+             * 
+             * Pakeistų bitų paryškinimui išsaugomos ir jų pozicijos.
+             * 
+             * @param e įvykio duomenys
+             */
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (markedIndex > -1 && markedIndex < data.size()) {
@@ -117,6 +179,11 @@ public class BitsSteam extends AbstractDataStructure {
         addMouseMotionListener(bitsEditor);
     }
     
+    /**
+     * Paišoma sritis, kurioje galima redaguoti bitus.
+     * 
+     * @param g paišymui skirtas objektas
+     */
     private void paintInsideData(Graphics g) {
         if (viewData().size() > 0) {
             int x1 = getBufferPadding(bufferWidth);
@@ -136,6 +203,11 @@ public class BitsSteam extends AbstractDataStructure {
         }
     }
     
+    /**
+     * Paišomas pažymėtas (užėjus virš jo su pele) bitas.
+     * 
+     * @param g paišymo objektas
+     */
     private void paintOverBit(Graphics g) {
         if (markedIndex > -1 && markedIndex < viewData().size()) {
             int x = markedIndex * bufferWidth;
@@ -151,6 +223,17 @@ public class BitsSteam extends AbstractDataStructure {
         }
     }
     
+    /**
+     * Išsaugomi standartiniai bitų sekos nustatymai.
+     * 
+     * Ši funkcija yra kviečiama tėvinės klasės.
+     * 
+     * @param g         paišymui skirtas objetas
+     * @param width     vaizduojamo bito plotis (tašakis)
+     * @param height    vaizduojamo bito aukštis (tašakis)
+     * @param step      bitų kiekis vienoje grupėje
+     * @param data      duomenų seka
+     */
     @Override
     protected void paintBuffer(Graphics g, int width, int height,
                               int step, Collection<Boolean> data) {
@@ -159,6 +242,13 @@ public class BitsSteam extends AbstractDataStructure {
         bufferHeight = height;
     }
     
+    /**
+     * Pagal ekrano pozciiją gaunama bito pozicija sekoje.
+     * 
+     * @param x ekrano taškas (skydelio atžvilgiu)
+     * @return  bito pozicija sekoje arba <code>-1</code> jei pagal tašką
+     *          neįmanoma rasti bito (taškas nepatenka į redaguojamų bitų zoną)
+     */
     private int getSymbolIndex(int x) {
         x -= getBufferPadding(bufferWidth);
         int index = x / bufferWidth;

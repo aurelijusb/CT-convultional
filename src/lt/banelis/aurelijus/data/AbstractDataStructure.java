@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import javax.swing.JButton;
@@ -21,15 +20,28 @@ import javax.swing.JTextArea;
 import lt.banelis.aurelijus.connectors.Synchronizer;
 
 /**
- * Data structure, that can be represented to Swing or binary.
+ * Duomenų struktūra, skirta dirbti su dvejetainiais duomenimis ir jų srautais.
  * 
- * WorkFlow:
+ * Funkcijų ryšys:
  * 
- *  GUI User ___                                ___ run() [setListener()]
- *              \___ putData() -+- [current] __/
- *  System   ___/               :              \___ retrieveData()
+ *  Naudotojas__                                    ___ onUpdated()
+ *              \___ putData() -+- [dabartiniai] __/
+ *  Sistema  ___/               :                  \___ retrieveData()
  *                              :       
- *                              +- [history] - viewAllData()
+ *                              +- [istoriniai] - viewAllData()
+ * 
+ * Schemos paaiškinimas:
+ *  Į sistemą duomenis galima pridėti tiek sistema, tiek naudotojas per duomenų
+ *  struktūros grafinę sąsają. Abiem atvejais naudojama funkcija putData().
+ * 
+ *  Duomenų struktūroje saugomi ir dabartiniai duomenys, ir istoriniai.
+ * 
+ *  Jei dabartiniai duomenys pakeičiami per naudotojo sąsają, tai iškviečiama
+ *  runkcija onUpdated(), kuri priskirta per setListener() procedūrą.
+ *  Dabartinius duomenis galima išsiimti pasinaudojus retrieveData() funkcija.
+ * 
+ *  Išsiėmus dabartinius duomenis, jie perkeliami į istorinius ir pasiekiami
+ *  per kitą funkciją: viewAllData()
  * 
  * @author Aurelijus Banelis
  */
@@ -51,18 +63,24 @@ public abstract class AbstractDataStructure extends JPanel {
     
     
     /**
-     * Interface to handle updated data.
+     * Sąsaja skirta informavimui apie naudotojo pridėtus/pakeistus duomenis.
      */
     public static interface InputListner {
+        /**
+         * Funkcija skirta informuoti, kad prisidėjo/pasikeitė šaltinio
+         * duomenys.
+         * 
+         * @param object    šaltinio/siuntėjo objektas.
+         */
         public void onUpdated(AbstractDataStructure object);
     }
     
     
     /**
-     * Data structure, that can be represented to Swing or binary.
+     * Sukuriama nauja duomenų struktūra
      * 
-     * @param inputEnabled <code>true</code> if user can input data from GUI,
-     *                     <code>false</code> when data from GUI is read only
+     * @param inputEnabled <code>true</code>, jei ji skirta duomeų įvedimui,
+     *                     <code>false</code> jei ji skirta tik atvaizdavimui.
      */
     public AbstractDataStructure(boolean inputEnabled) {
         this.inputEnabled = inputEnabled;
@@ -72,13 +90,14 @@ public abstract class AbstractDataStructure extends JPanel {
     
     
     /*
-     * Storing data
+     * Funkcijos, skirtos duomenų saugojimui
      */
     
     /**
-     * Store data into object.
+     * Pridėti naujus duomenis į duomenų struktūrą.
      * 
-     * New data is added to object.
+     * Funkcija iškviečiama pridedant duomenis ir sistemos, ir naudotojo per
+     * grafinę sistemą.
      */
     public final void putData(Collection<Boolean> data) {
         if (isDestination && syncronizer != null) {
@@ -94,23 +113,25 @@ public abstract class AbstractDataStructure extends JPanel {
     }
 
     /**
-     * Implementation of storing data.
+     * Specifinės duomenų struktūros išsugojimas.3
      * 
-     * @see #putData(java.lang.Iterable)
+     * @see #putData(java.util.Collection) 
      */
     protected abstract void putDataImplementation(Collection<Boolean> data);
     
 
     /*
-     * Getting data
+     * Funkcijos, skirtos duomenų gavimui
      */
     
     /**
-     * Retrieving new data.
+     * Paimti duomenis iš stuktūros.
      * 
-     * Data is removed from object except history.
+     * Paimti duomenys yra perkeliami į duomeų istoriją ir antrą karta su ta
+     * pačia funkcija nėra piimami.
      * 
-     * @return  data converted to binary.
+     * @return  duomenys paversti į dvejetainę seką
+     * 
      * @see #viewAllData()
      */
     public Collection<Boolean> retrieveData() {
@@ -118,35 +139,43 @@ public abstract class AbstractDataStructure extends JPanel {
         history.addAll(data);
         return data;
     }
-
     
     /**
-     * View currently stored data without modifying it.
+     * Dabartinių duomenų peržiūros įgyvendinimas.
+     * 
+     * Duomenys nėa išimami, t.y. šią funkciją galima naudoti daug kartų ir
+     * duomenys nedings.
+     * 
+     * @return  dabartiniai duomenys paversti dvejetaine seka.
      */
     protected abstract Collection<Boolean> viewData();
-    
-    
+        
     /**
-     * Implementation of retrieving data.
+     * Duomenų išėmimo įgyvendinimas.
      * 
      * @see #retrieveData()
      */
     protected abstract Collection<Boolean> retrieveDataImplementation();
-    
-    
+        
     /**
-     * Set handler, that is executed after data is updated.
+     * Funkcijos, skirtos pranešimui apie naudotojo atnaujintus duomenis,
+     * priskyrimas
      * 
-     * @param listener  input handler
+     * @param listener  objektas, su veiksmais, skirtais atlikti po duomenų
+     *                  pridėjimo/pasikeitimo
+     * 
      * @see #retrieveDataImplementation()
      */
     public void setListerer(Runnable listener) {
         this.listener = listener;
     }
-
     
     /**
-     * View current and past data.
+     * Funkcija skirta pasižiūrėti esamus ir istorinius duomenis kartu.
+     * 
+     * Duomenys tik peržiūrimi, bet nesugadinami.
+     * 
+     * @return bitų seka
      */
     public Collection<Boolean> viewAllData() {
         Collection<Boolean> current = viewData();
@@ -158,9 +187,10 @@ public abstract class AbstractDataStructure extends JPanel {
             return history;
         }
     }
-    
+        
     /**
-     * Brings all values to default.
+     * Ištinami esami duomenys bei atliekami kiti atsatymo į pradinę būseną
+     * veiksmai.
      */
     public void reset() {
         history = new LinkedList<Boolean>();
@@ -169,15 +199,22 @@ public abstract class AbstractDataStructure extends JPanel {
     }
     
     /**
-     * Brings all specific object's values to default.
+     * Konkrečios duomenų struktūros perėjimas į pradinę būseną.
      */
     protected abstract void resetOwn();
 
     
     /*
-     * Synchronization
+     * Funkcijos skirtos siuntėjo-gavėjo sąryšiui
      */
     
+    /**
+     * Priskiriamas sąryšio palaikymui skirtas ojektas.
+     * 
+     * @param syncronizer   sąryšiui skirtas objetas.
+     * @param comparator    struktūra, su kuria bus lyginami duomenys
+     * @param isDestination ar šis duomenų struktūra yra gavėjas
+     */
     public void setSyncronizer(Synchronizer syncronizer,
                               AbstractDataStructure comparator,
                               boolean isDestination) {
@@ -186,6 +223,11 @@ public abstract class AbstractDataStructure extends JPanel {
         this.isDestination = isDestination;
     }
 
+    /**
+     * Grąžinamas šaltinis.
+     * 
+     * @return duomenų šaltinio objekas
+     */
     private Collection<Boolean> getSource() {
         if (isDestination) {
             return viewAllData();
@@ -194,6 +236,11 @@ public abstract class AbstractDataStructure extends JPanel {
         }
     }
     
+    /**
+     * Grąžinamas gavėjas.
+     * 
+     * @return duomenų gavėjo objetas
+     */
     private Collection<Boolean> getDestination() {
         if (isDestination) {
             return comparator.viewAllData();
@@ -202,10 +249,25 @@ public abstract class AbstractDataStructure extends JPanel {
         }
     }
     
+    /**
+     * Palyginama, ar siuntėjo ir gavėjo bitas konkrečioje pozcijoje yra toks
+     * pats.
+     * 
+     * @param offset    bito pozicija (skaičiuojant nuo 0, pradžios)
+     * @return          ar bitai sutapo
+     */
     private boolean isEqual(int offset) {
         return getBit(getSource(), offset) == getBit(getDestination(), offset);
     }
     
+    /**
+     * Gaunamas konkretus bitų srauto elemetnas.
+     * 
+     * @param container bitų srautas
+     * @param offset    elemento pozicija
+     * @return          elemetnas, nurodytoje pozicijoje,
+     *                  arba <code>null</code>, jei bitas nerastas
+     */
     private Boolean getBit(Collection<Boolean> container, int offset) {
         if (container.size() <= offset || offset < 0) {
             return null;
@@ -225,36 +287,56 @@ public abstract class AbstractDataStructure extends JPanel {
         return null;
     }
     
+    /**
+     * Deleguojama sinchronizacijai naudojama funkcija.
+     * 
+     * @return bitų seka, skirta užbaigti paskutinį pranešimą.
+     */
     protected Collection<Boolean> dataToSynchronize() {
         if (syncronizer != null) {
             return syncronizer.dataToSynchronize();
         } else {
-            return Collections.EMPTY_LIST;
+            return new LinkedList<Boolean>();
         }
     }
     
     
     /*
-     * Graphical user interface
+     * Funkcijos skirtos grafinei naudotojo sąsajai
      */
     
     /**
-     * @return <code>true</code> when user can able to enter data from GUI,
-     *         <code>false</code> when data from GUI is read only
+     * Grąžinama, ar komponentas yra skirtas duomenų įvedimui.
+     * 
+     * @return inputEnabled <code>true</code>, jei ji skirta duomeų įvedimui,
+     *                     <code>false</code> jei ji skirta tik atvaizdavimui.
      */
     protected final boolean isInputEnabled() {
         return inputEnabled;
     }
 
+    /**
+     * Nustatoma, ar komponentas yra skirtas duomenų įvedimui.
+     * 
+     * Įprastai komponentai nekeičia galimybės įvesti ar tik rodyti duomenis.
+     * 
+     * @param inputEnabled <code>true</code>, jei ji skirta duomeų įvedimui,
+     *                     <code>false</code> jei ji skirta tik atvaizdavimui.
+     */
     protected void setInputEnabled(boolean inputEnabled) {
         this.inputEnabled = inputEnabled;
     }
     
     
     /*
-     * Painting stream
+     * Funkcijos skirtos paišyti bitų seką
      */
     
+    /**
+     * Bendriausia bitų paišymo funkcija.
+     * 
+     * @param g paišymui skirtas objetas.
+     */
     protected void paintBuffer(Graphics g) {
         if (halfSize) {
             paintBuffer(g, currentFont.getSize(), font.getSize(), 8,
@@ -264,6 +346,14 @@ public abstract class AbstractDataStructure extends JPanel {
         }
     }
     
+    /**
+     * Grąžinamas paslinkimas ekrane, kad siuntėjo ir gavėjo bitų sekos
+     * susiligiuotų
+     * 
+     * @param width vaizduojamo bito plotis
+     * 
+     * @return      poslinkio atstumas taškais nuo kairio krašto
+     */
     protected final int getBufferPadding(int width) {
         if (isDestination && syncronizer != null) {
             return syncronizer.getSynchronisation() * width;
@@ -272,6 +362,18 @@ public abstract class AbstractDataStructure extends JPanel {
         }
     }
     
+    /**
+     * Bitų sekos paišymo funkcija.
+     * 
+     * Lengvesniam duomenų palyginimui naudojamas grupavimas, paremntas
+     * skirtingu fonu.
+     * 
+     * @param g         paišymui skirtas objetas
+     * @param width     vaizduojamo bito plotis (tašakis)
+     * @param height    vaizduojamo bito aukštis (tašakis)
+     * @param step      bitų kiekis vienoje grupėje
+     * @param data      duomenų seka
+     */
     protected void paintBuffer(Graphics g, int width, int height,
                               int step, final Collection<Boolean> data) {
         int padding = getBufferPadding(width);
@@ -280,18 +382,18 @@ public abstract class AbstractDataStructure extends JPanel {
         Color background = backgrounds[0];
         Color foreground = foregrounds[0];
         for (Boolean bit : data) {
-            /* Position and value */
+            /* Bito vieta ir reikšmė */
             int x = padding + width * i;
             int symbol = bit ? 1 : 0;
 
-            /* Color */
+            /* Bito spalva */
             if ((length - i) % step == 0) {
                 int colorIndex = ((length - i) % (step * 2) == 0) ? 0 : 1;
                 background = backgrounds[colorIndex];
                 foreground = foregrounds[colorIndex];
             }
 
-            /* Drawing */
+            /* Paišymas */
             if (x + width < getWidth()) {
                 g.setColor(background);
                 g.fillRect(x, 0, width, height);
@@ -301,8 +403,10 @@ public abstract class AbstractDataStructure extends JPanel {
                 }
                 int offsetFromEnd = data.size() - i - 1;
                 if (isDestination && !isEqual(offsetFromEnd)) {
+                    /* Nesutampatis bitas */
                     paintError(g, x, width, height);
                 } else {
+                    /* Sutampatnis bitas */
                     g.setColor(Color.BLACK);
                 }
                 g.drawString(symbol + "", x, height);
@@ -311,11 +415,26 @@ public abstract class AbstractDataStructure extends JPanel {
         }
     }
     
+    /**
+     * Pažymimas (užpiešiamas) klaidingas bitas.
+     * 
+     * @param g         piešimui skirtas objektas
+     * @param x         bito pozicija ekrane (taškais)
+     * @param width     bito plotis ekrane (taškais)
+     * @param height    bito aukštis ekrane (taškais)
+     */
     protected final void paintError(Graphics g, int x, int width, int height) {
         g.setColor(Color.RED);
         g.drawRect(x, height, width, 2);
     }
 
+    /**
+     * Individualių bitų dydžio nustatymas.
+     * 
+     * Funkcija naudojama, kai reikia vaizdžiai susieti 1:2 bitais.
+     * 
+     * @param halfSize  ar sumažiniti bitų plotš per pusę
+     */
     public void setHalfSize(boolean halfSize) {
         this.halfSize = halfSize;
         if (halfSize) {
@@ -326,6 +445,11 @@ public abstract class AbstractDataStructure extends JPanel {
         repaint();
     }
     
+    /**
+     * Sugeneruojama bitų sekos vaizdavimui pritaikytas skydelis.
+     * 
+     * @return  sugeneruotas sludelis.
+     */
     protected JPanel getStreamPanel() {
         JPanel binary = new JPanel() {
             @Override
@@ -339,6 +463,19 @@ public abstract class AbstractDataStructure extends JPanel {
         return binary;
     }
     
+    
+    /*
+     * Funkcijos skirtos peržiūrėti bitų seką naujame lange
+     */
+    
+    /**
+     * Skydeliui priskiriamas iššokančio lango su pilna bitų seka
+     * funkcionalumas.
+     * 
+     * @param panel skydelis, kuriam reikia priskirti šį funkcionalumą.
+     * 
+     * @see #showBinaryTextExternally() 
+     */
     protected void addExternalViever(JPanel panel) {
         panel.addMouseListener(new MouseAdapter() {
             @Override
@@ -352,6 +489,9 @@ public abstract class AbstractDataStructure extends JPanel {
                               "parodyti");
     }
     
+    /**
+     * Sukuriamas ir parodomas langas su pilna duomenų struktūros bitų seka.
+     */
     private void showBinaryTextExternally() {
         JFrame frame = new JFrame("Vektorių seka");
         frame.setLayout(new BorderLayout());
@@ -373,10 +513,20 @@ public abstract class AbstractDataStructure extends JPanel {
         frame.setVisible(true);
     }
     
+    /**
+     * Atnaujinamas visų bitų seką vaizduojantis langas.
+     * 
+     * @param text  naujas tekstas.
+     */
     private void updateBinnaryTextExternal(JTextArea text) {
         text.setText(allDataToText());
     }
     
+    /**
+     * Bitų seka paverčiama žmogui lengviau skaitomu formatu.
+     * 
+     * @return  bitų sekos tekstinė išraiška.
+     */
     private String allDataToText() {
         Collection<Boolean> data = viewAllData();
         StringBuilder builder = new StringBuilder(data.size());

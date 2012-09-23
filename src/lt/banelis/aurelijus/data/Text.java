@@ -17,7 +17,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 /**
- * Text representation.
+ * Duomenų struktūra teksto įvedimui, vaizdavimui ir persiuntimui.
  *
  * @author Aurelijus Banelis
  */
@@ -27,6 +27,12 @@ public class Text extends AbstractDataStructure {
     private boolean shiftNeeded = false;
     private JTextArea text = new JTextArea();
     
+    /**
+     * Naujos duomenų strukūros sukūrimas.
+     * 
+     * @param inputEnabled <code>true</code>, jei ji skirta duomeų įvedimui,
+     *                     <code>false</code> jei ji skirta tik atvaizdavimui.
+     */
     public Text(boolean inputEnabled) {
         super(inputEnabled);
         if (inputEnabled) {
@@ -38,15 +44,23 @@ public class Text extends AbstractDataStructure {
     
     
     /*
-     * Data storage
+     * Funkcijos skirtos duomenų saugojimui ir paėmimui
      */
     
+    /**
+     * Duomenų pridėjimas.
+     * 
+     * @param data  naujų bitų seka.
+     */
     @Override
     protected void putDataImplementation(Collection<Boolean> data) {
         this.data.addAll(data);
         updateText();
     }
     
+    /**
+     * Pagal išsaugotą bitų seką pavaizduojamas tekstas.
+     */
     private void updateText() {
         int modulus = viewAllData().size() % Character.SIZE;
         if (shiftNeeded && modulus != 0) {
@@ -57,8 +71,19 @@ public class Text extends AbstractDataStructure {
         }        
     }
     
+    /**
+     * Bitų seka pastumiama į vieną arba kitą pusę, ištrinant netilpusius bitus.
+     * 
+     * Funkcija yra naudinga, kai nenorima gauti nepilnų teksto fragmentų.
+     * Jei poslinkio modulis viršyja sekod dydį, gražinamas nepakeistas srautas.
+     * 
+     * @param data          bitų seka
+     * @param difference    poslinkis (teigiams į dešinę, neigiamas - į kairę)
+     * @return              bitų sekos dalis
+     */
     private Collection<Boolean> shift(Collection<Boolean> data, int difference) {
         if (difference > 0 && difference < data.size()) {
+            /* Ištrinama pradžia */
             int size = data.size() - difference;
             ArrayList<Boolean> result = new ArrayList<Boolean>(size);
             int i = 0;
@@ -71,6 +96,7 @@ public class Text extends AbstractDataStructure {
             }
             return result;
         } else if (difference < 0 && -difference < data.size()) {
+            /* Ištrinamas galas */
             int size = data.size() + difference;
             ArrayList<Boolean> result = new ArrayList<Boolean>(size);
             int i = 0;
@@ -84,15 +110,26 @@ public class Text extends AbstractDataStructure {
             }
             return result;
         } else {
+            /* Seka nekeičiama */
             return data;
         }
     }
 
+    /**
+     * Peržiūrimi esami duomenys.
+     * 
+     * @return tekstą atitinkanti bitų seka
+     */
     @Override
     protected Collection<Boolean> viewData() {
         return data;
     }
 
+    /**
+     * Išimami esami duomenys.
+     * 
+     * @return tekstą atitinkanti bitų seka
+     */
     @Override
     protected Collection<Boolean> retrieveDataImplementation() {
         Collection<Boolean> toRetrieve = data;
@@ -100,6 +137,9 @@ public class Text extends AbstractDataStructure {
         return toRetrieve;
     }
 
+    /**
+     * Atstatoma pradinė būsena.
+     */
     @Override
     public void resetOwn() {
         data = new LinkedList<Boolean>();
@@ -109,9 +149,39 @@ public class Text extends AbstractDataStructure {
 
     
     /*
-     * Data transformation
+     * Funkcijos skirtos duomenų transfromacijai (simbolis, bitai)
      */
+
+    /**
+     * Teksto vertimas bitų seka.
+     * 
+     * Vienas simbolis atitinka 16 bitų.
+     * 
+     * @param text  tekstas, kurį norima paversti bitais
+     * @return      tekstą atitinkanti bitų seka
+     */
+    protected static List<Boolean> toBinary(String text) {
+        LinkedList<Boolean> result = new LinkedList<Boolean>();
+        for (int i = 0; i < text.length(); i++) {
+            char word = text.charAt(i);
+            int bit = BIT_16;
+            for (int j = 0; j < Character.SIZE; j++) {
+                result.add((word & bit) != 0);
+                bit >>>= 1;
+            }
+        }
+        return result;
+    }
     
+    /**
+     * Bitų sekos vertimas tekstu.
+     * 
+     * Jei bitų seka neatitinka simbolio dydžio, paskutinis simbolis sukuriamas
+     * iš esamų duomenų.
+     * 
+     * @param data  tekstą atitinkanti bitų seka
+     * @return      atkurtas tekstas
+     */
     protected static String toText(Collection<Boolean> data) {
         StringBuilder result = new StringBuilder();
         char word = 0;
@@ -133,25 +203,16 @@ public class Text extends AbstractDataStructure {
         return result.toString();
     }
     
-    protected static List<Boolean> toBinary(String text) {
-        LinkedList<Boolean> result = new LinkedList<Boolean>();
-        for (int i = 0; i < text.length(); i++) {
-            char word = text.charAt(i);
-            int bit = BIT_16;
-            for (int j = 0; j < Character.SIZE; j++) {
-                result.add((word & bit) != 0);
-                bit >>>= 1;
-            }
-        }
-        return result;
-    }
-    
     
     /*
-     * Graphical user interface
+     * Funkcijos skirtos grafinei naudotojo sąsajai.
      */
-    
+
+    /**
+     * Sukuriami elementai teksto įvedimui.
+     */
     private void initialiseEditable() {
+        /* Skydelis ir persiuntimo mygtukas */
         JPanel buttons = new JPanel();
         buttons.setLayout(new BorderLayout());
         JButton send = new JButton("Į kanalą");
@@ -160,6 +221,8 @@ public class Text extends AbstractDataStructure {
                 putData(toBinary(text.getText()));
             }
         });
+        
+        /* Paskutinių (sinchronizacijos) bitų siuntimo mygtukas */
         JButton finalize = new JButton("Paskutinis");
         finalize.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -170,7 +233,7 @@ public class Text extends AbstractDataStructure {
         buttons.add(send, BorderLayout.CENTER);
         buttons.add(finalize, BorderLayout.EAST);
         
-        
+        /* Galutinis elementų išdėliojimas */
         setLayout(new BorderLayout());
         JScrollPane pane = new JScrollPane(text);
         add(pane, BorderLayout.CENTER);
@@ -179,7 +242,11 @@ public class Text extends AbstractDataStructure {
         add(binary, BorderLayout.NORTH);
     }
     
+    /**
+     * Sukūriami elementai teksto (ir jį atitinkančių bitų) peržiūrai
+     */
     private void initialiseVisible() {
+        /* Teksto laukelis */
         text.setEditable(false);
         final JPanel binary = getStreamPanel();
         final String tooltip = "Du kartus bakstelėkite, norėdami pakeisti " +
@@ -201,10 +268,9 @@ public class Text extends AbstractDataStructure {
                 }
             }
         });
-        final JCheckBox complete = new JCheckBox("Tik pilnus");
-        complete.setToolTipText("Ingoruoti vektorius trumnpesnius už raidės " + 
-                "ilgį ( " + Character.SIZE + ")");
-          binary.setLayout(new FlowLayout(FlowLayout.LEFT));
+        
+        /* Galutinis elementų išdėliojimas */
+        binary.setLayout(new FlowLayout(FlowLayout.LEFT));
         setLayout(new BorderLayout());
         JScrollPane pane = new JScrollPane(text);
         add(pane, BorderLayout.CENTER);

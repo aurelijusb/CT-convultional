@@ -5,7 +5,8 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 /**
- * Testing binary text container.
+ * Automatiniai testai skirti patikrinti teksto vertimą į bitų seką ir
+ * atvirkščiai.
  *
  * @author Aurelijus Banelis
  */
@@ -30,6 +31,14 @@ public class TextTest {
         testIntegrity("Aš\ntu\rjie\tjos");
     }
     
+    /**
+     * Patirkrina, ar tekstas pavertus bitu seka ir atvertus vėl į tekstą
+     * lieka toks pats.
+     * 
+     * Neatitikimo atveju iššaukiama testavimo klaida.
+     * 
+     * @param expected  pradinis tekstas.
+     */
     private void testIntegrity(String expected) {
         Collection<Boolean> binnary = Text.toBinary(expected);
         String result = Text.toText(binnary);

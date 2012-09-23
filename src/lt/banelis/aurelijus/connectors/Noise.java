@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.Random;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -13,7 +12,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 /**
- * Random noise generator.
+ * Automatinis kanalo triukšmų generatorius.
  *
  * @author Aurelijus Banelis
  */
@@ -23,15 +22,27 @@ public class Noise extends JPanel implements Connector {
     private JSlider probabilitySlider = new JSlider();
     private JLabel probabilityLabel = new JLabel("Triukšmai: 0%");
     
+    /**
+     * Suykuriamas triukšmų kūrimui skirtas objektas
+     */
     public Noise() {
         initialiseView();
     }
     
     
     /*
-     * Calculation
+     * Funkcijos skirtos skaičiavimams
      */
     
+    /**
+     * Iškraipomos duomenų srauto reikšmės.
+     * 
+     * Iškraipymas atliekamas pagal iškraipimo tikimybę, kuri nustatoma per
+     * grafinę naudotojo sąsają.
+     * 
+     * @param data  pradiniai duomenys.
+     * @return      duomenys, kuriuose gali būti triukšmų.
+     */
     @Override
     public Collection<Boolean> transform(Collection<Boolean> data) {
         int size = data.size();
@@ -54,9 +65,12 @@ public class Noise extends JPanel implements Connector {
     
     
     /*
-     * Graphical user interface
+     * Funkcijos skirtos grafinei naudotojo sąsajai.
      */
     
+    /**
+     * Sukuriami grafiniai elementai skirti triukšmų nustatymui.
+     */
     private void initialiseView() {
         setLayout(new BorderLayout());
         probabilitySlider.setValue(0);
@@ -78,6 +92,11 @@ public class Noise extends JPanel implements Connector {
         });
     }
 
+    /**
+     * Triukšmų keitimo įjungimas arba išjungimas
+     * 
+     * @param enabled   ar galima keisti triukšmo lygį
+     */
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);

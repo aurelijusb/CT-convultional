@@ -3,11 +3,12 @@ package lt.banelis.aurelijus.data;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
-import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
- * Testing binary image container.
+ * Automatiniai testai skirti patikrinti skaičiaus bei paveikslėlio vertimą
+ * bitu seka ir atvirkščiai.
  *
  * @author Aurelijus Banelis
  */
@@ -18,7 +19,7 @@ public class ImageTest {
 
     
     /*
-     * Numeric tests
+     * Testai skirti patirinti skaičių vertimą bitų seka ir atvirkščiai
      */
     
     @Test
@@ -50,7 +51,7 @@ public class ImageTest {
 
     
     /*
-     * Image tests
+     * Testai skirti patikrinti paveikslėlio vertimą bitų seka ir atvirkščiai
      */
     
     @Test
@@ -85,7 +86,7 @@ public class ImageTest {
     
     
     /*
-     * Utilities
+     * Testavimui naudingos funkcijos
      */
     
     private void assertIntegrity(int number) {

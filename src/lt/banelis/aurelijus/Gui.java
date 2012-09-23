@@ -2,6 +2,8 @@ package lt.banelis.aurelijus;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -18,7 +20,8 @@ import lt.banelis.aurelijus.data.Image;
 import lt.banelis.aurelijus.data.Text;
 
 /**
- * Graphical user interface for Hagelbarger coding and decoding.
+ * Pagrindinis programos failas, skirtas sudėlioti visus elementus į grafinę
+ * naudotojo sąsają.
  * 
  * @author Aurelijus Banelis
  */
@@ -44,13 +47,19 @@ public class Gui extends javax.swing.JFrame {
     private JPanel integrityCard = new JPanel();
     private static int progressState = 4;
     
+    /**
+     * Objekto sukūrimas.
+     */
     public Gui() {
         initComponents();
         initialiseView();
     }
     
+    /**
+     * Sukūriami pagrindiniai grafiniai elementai.
+     */
     private void initialiseView() {
-        /* GUI */
+        /* Grafinių elementų sudėjimas ir sujungimas */
         for (AbstractDataStructure panel : senders) {
             panel.setVisible(false);
             senderCard.add(panel);
@@ -79,6 +88,8 @@ public class Gui extends javax.swing.JFrame {
         updateView();
         keyboardShortcuts();
         updateNoiseOptions();
+        
+        /* Pranešimai apie darbo eigą */
         Synchronizer.setProgressUpdater(new Runnable() {
             public void run() {
                 double progress = Synchronizer.progress;
@@ -105,7 +116,7 @@ public class Gui extends javax.swing.JFrame {
             }
         });
         
-        /* Synchronization and error highlighting */
+        /* Sinchronizacijai skirti elementai */
         for (int i = 0; i < senders.length; i++) {
             sourceDestination.chainDevices(senders[i], receivers[i]);
         }
@@ -114,7 +125,7 @@ public class Gui extends javax.swing.JFrame {
         inputChannel.setHalfSize(true);
         outputChannel.setHalfSize(true);
         
-        /* Sending as user inputs data */
+        /* Kodavimo paleidimas, inicijuojant siuntėjui */
         for (AbstractDataStructure sender : senders) {
             sender.setListerer(new Runnable() {
                 public void run() {
@@ -139,10 +150,17 @@ public class Gui extends javax.swing.JFrame {
         }
     }
     
+    /**
+     * Siuntėjo duomenys užkoduojami ir įrašomi į kanalą.
+     */
     private void encode() {
         inputChannel.putData(encoder.transform(currentSender.retrieveData()));
     }
     
+    /**
+     * Paveikslėlkio arba teksto vertimo į/iš dvejetainio (q=2) kodo
+     * pavaizdavimas.
+     */
     private void checkIntegrity() {
         if (integrityCheck != null) {
             integrityCheck.retrieveData();
@@ -151,14 +169,37 @@ public class Gui extends javax.swing.JFrame {
         }
     }
     
+    /**
+     * Duomenų siuntimas kanalu, kai kanale gali būti triukšmų.
+     */
     private void transfer() {
         outputChannel.putData(noise.transform(inputChannel.retrieveData()));
     }
     
+    /**
+     * Tęsiamas duomenų siuntimas kanalu, kai naudotojas rankiniu būdu pakeitė
+     * kai kuriuos bitus.
+     */
+    private void continueTransfer() {
+        transfer();
+        progressState = 3;
+        Synchronizer.updateProgress();
+        decode();
+        progressState = 4;
+        Synchronizer.updateProgress();
+        inputChannel.repaint();
+    }
+    
+    /**
+     * Kanalo duomenų dekodavimas ir perdavimas gavėjui.
+     */
     private void decode() {
         currentReceiver.putData(decoder.transform(outputChannel.retrieveData()));
     }
 
+    /**
+     * Spartieji klaviškai patogesniam bitų įvedimui.
+     */
     private void keyboardShortcuts() {
         KeyListener globalKeyListener =  new KeyAdapter() {
             @Override
@@ -174,9 +215,37 @@ public class Gui extends javax.swing.JFrame {
                 }
             }
         };
-        Bit.globalKeyShortcuts(this, globalKeyListener);
+        globalKeyShortcuts(this, globalKeyListener);
     }
     
+    /**
+     * Rekursyvus sparčiųjų klavišų pridėjimas į kiekvieną elementą.
+     * 
+     * Kad kalvišų kombinacijos veiktų visoje programoje, reikia turėti
+     * bendrą reagavimą į klavišų paspaudimus.
+     * Įprastai į klavišus reaguoja tik pažymėtas elemetnas.
+     * 
+     * @param root      virtšutinis (tėvinis) elementas
+     * @param listener  funkciją, reagavimui į klavišus
+     */
+    public static void globalKeyShortcuts(Container root,
+                                          KeyListener listener) {
+        for (Component component : root.getComponents()) {
+            if (component.isFocusable()) {
+                component.addKeyListener(listener);
+                if (component instanceof Container) {
+                    globalKeyShortcuts((Container) component, listener);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Kanalo triukšmų parinkimas.
+     * 
+     * Arba triukšmai parenkami automatišmai pagal tikimybę,
+     * arba kanalo bitai keičiami naudotojo.
+     */
     private void updateNoiseOptions() {
         noise.setEnabled(noiseProbabilityRadio.isSelected());
         if (inputChannel instanceof BitsSteam) {
@@ -186,7 +255,13 @@ public class Gui extends javax.swing.JFrame {
         resendButton.setVisible(noiseManualRadio.isSelected());
     }
     
+    /**
+     * Atnaujinama naudoto sąsaja pereinant nuo vieno duomenų tipo prie kito.
+     * 
+     * Pavyzdžiui pereinant nuo bitų prie teksto ar paveikslėlių.
+     */
     private void updateView() {
+        /* Siuntėjo/gavėjo grupė */
         int index = 0;
         if (textRadio.isSelected()) {
             index = 1;
@@ -194,9 +269,9 @@ public class Gui extends javax.swing.JFrame {
             index = 2;
         }
         
+        /* Pakeičiamas siuntėjas/gavėjas */
         currentSender = senders[index];
         currentReceiver = receivers[index];
-        
         for (int i = 0; i < senders.length; i++) {
             if (i == index) {
                 senders[i].setVisible(true);
@@ -207,6 +282,7 @@ public class Gui extends javax.swing.JFrame {
             }
         }
         
+        /* Pakeičiamas vertimo į dvejetainį kodą patikrinimo objektas */
         integrityPanel.setVisible(index != 0);
         if (index != 0) {
             integrityCheck = integrityChecks[index - 1];
@@ -220,9 +296,16 @@ public class Gui extends javax.swing.JFrame {
         } else {
             integrityCheck = null;
         }
+        
+        /* Išvalomos kitų duomenų struktūrų paliktos šiukšlės */
         resetData();
     }
     
+    /**
+     * Išvalomos kitų duomenų struktūrų paliktos šiukšlės.
+     * 
+     * Atsatatoma pradinė padėtis.
+     */
     private void resetData() {
         for (AbstractDataStructure sender : senders) {
             sender.reset();
@@ -242,7 +325,8 @@ public class Gui extends javax.swing.JFrame {
     
     
     /*
-     * Autogenerated Swing components layout
+     * Automatiškai Programavimo aplinkos sugeneruotas elementų išdėliojimui
+     * skirtas kodas.
      */
     
     @SuppressWarnings("unchecked")
@@ -373,13 +457,7 @@ public class Gui extends javax.swing.JFrame {
     }//GEN-LAST:event_noiseProbabilityRadioStateChanged
 
     private void resendButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resendButtonActionPerformed
-        transfer();
-        progressState = 3;
-        Synchronizer.updateProgress();
-        decode();
-        progressState = 4;
-        Synchronizer.updateProgress();
-        inputChannel.repaint();
+        continueTransfer();
     }//GEN-LAST:event_resendButtonActionPerformed
 
     private void bitRadioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bitRadioActionPerformed
@@ -397,7 +475,12 @@ public class Gui extends javax.swing.JFrame {
     private void resetButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetButtonActionPerformed
         resetData();
     }//GEN-LAST:event_resetButtonActionPerformed
-
+  
+    /**
+     * Porgramos paleidimas iš komandinės eilutės.
+     * 
+     * @param args programos argumentai
+     */
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
